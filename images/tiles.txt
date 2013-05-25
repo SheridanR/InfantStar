@@ -34,7 +34,6 @@ pgem1.bmp 0
 pgem2.bmp 0
 pgem3.bmp 0
 pgem4.bmp 0
-pink.bmp 0
 piped.bmp 0
 pipeh.bmp 0
 pipel.bmp 0
@@ -44,11 +43,10 @@ pipev.bmp 0
 platform.bmp 0
 platformright.bmp 0
 platformleft.bmp 0
-redback.bmp 0
-redbackl.bmp 0
-redbackr.bmp 0
-redgrayleft.bmp 0
-redgrayright.bmp 0
+red.bmp 0
+redleft.bmp 0
+redright.bmp 0
+gray.bmp 0
 rflower1.bmp 0
 rflower2.bmp 0
 rflower3.bmp 0
