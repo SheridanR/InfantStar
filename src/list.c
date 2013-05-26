@@ -95,7 +95,7 @@ node_t *list_AddNode(list_t *list) {
 	
 	// allocate memory for node
 	if( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
-		printf( stderr, "failed to allocate memory for new node!\n" );
+		fprintf( stderr, "failed to allocate memory for new node!\n" );
 		exit(1);
 	}
 	

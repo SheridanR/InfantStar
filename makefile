@@ -17,8 +17,8 @@ LIB2=-L/usr/local/lib
 
 all: game clean
 	
-game: objects.o list.o game.o
-	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o -o game.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
+game: behaviors.o draw.o objects.o list.o game.o
+	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o -o game.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
 	
 game.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c src/game.c -o game.o
@@ -28,6 +28,12 @@ list.o:
 	
 objects.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c src/objects.c -o objects.o
+	
+draw.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/draw.c -o draw.o
+	
+behaviors.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/behaviors.c -o behaviors.o
 	
 clean:
 	rm *.o

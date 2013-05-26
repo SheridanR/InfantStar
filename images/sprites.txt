@@ -1,3 +1,4 @@
+images/null.bmp
 images/lily1a.bmp
 images/lily1j.bmp
 images/lily1k.bmp

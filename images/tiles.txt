@@ -1,87 +1,87 @@
-images/backdrop.bmp 0
-images/bback.bmp 0
-images/bbrick.bmp 0
-images/bluepipe.bmp 0
-images/bpillarbot.bmp 0
-images/bpillarmid.bmp 0
-images/bpillartop.bmp 0
-images/bubble1.bmp 0
-images/bubble2.bmp 0
-images/bubble3.bmp 0
-images/bush.bmp 0
-images/dirt.bmp 0
-images/dirtleft.bmp 0
-images/dirtright.bmp 0
-images/dirtunderleft.bmp 0
-images/dirtunderright.bmp 0
-images/gbackleft.bmp 0
-images/gbackright.bmp 0
-images/girder.bmp 0
-images/grass.bmp 0
-images/grassleft.bmp 0
-images/grassright.bmp 0
-images/grayback.bmp 0
-images/graybrick.bmp 0
-images/grayfore.bmp 0
-images/grayleft.bmp 0
-images/graymid.bmp 0
-images/grayright.bmp 0
-images/graysquare.bmp 0
-images/greenbrick.bmp 0
-images/hbar.bmp 0
-images/orange.bmp 0
-images/pgem1.bmp 0
-images/pgem2.bmp 0
-images/pgem3.bmp 0
-images/pgem4.bmp 0
-images/piped.bmp 0
-images/pipeh.bmp 0
-images/pipel.bmp 0
-images/piper.bmp 0
-images/pipet.bmp 0
-images/pipev.bmp 0
-images/platform.bmp 0
-images/platformright.bmp 0
-images/platformleft.bmp 0
-images/red.bmp 0
-images/redleft.bmp 0
-images/redright.bmp 0
-images/gray.bmp 0
-images/rflower1.bmp 0
-images/rflower2.bmp 0
-images/rflower3.bmp 0
-images/rflower4.bmp 0
-images/rgem1.bmp 0
-images/rgem2.bmp 0
-images/rgem3.bmp 0
-images/rgem4.bmp 0
-images/rock.bmp 0
-images/rockleftbig.bmp 0
-images/rockleftsmall.bmp 0
-images/rockrightbig.bmp 0
-images/rockrightsmall.bmp 0
-images/sand.bmp 0
-images/sanddeep.bmp 0
-images/sandleft.bmp 0
-images/sandleftdeep.bmp 0
-images/sandright.bmp 0
-images/sandrightdeep.bmp 0
-images/signdown.bmp 0
-images/signleft.bmp 0
-images/signright.bmp 0
-images/signup.bmp 0
-images/slimy.bmp 0
-images/spikes.bmp 0
-images/spring.bmp 0
-images/springleft.bmp 0
-images/springright.bmp 0
-images/vbar.bmp 0
-images/warnlight.bmp 0
-images/water.bmp 0
-images/water1.bmp 0
-images/water2.bmp 0
-images/water3.bmp 0
-images/yflower1.bmp 0
-images/yflower2.bmp 0
-images/yflower3.bmp 0
-images/yflower4.bmp 0
+images/backdrop.bmp
+images/bback.bmp
+images/bbrick.bmp
+images/bluepipe.bmp
+images/bpillarbot.bmp
+images/bpillarmid.bmp
+images/bpillartop.bmp
+images/bubble1.bmp
+images/bubble2.bmp
+images/bubble3.bmp
+images/bush.bmp
+images/dirt.bmp
+images/dirtleft.bmp
+images/dirtright.bmp
+images/dirtunderleft.bmp
+images/dirtunderright.bmp
+images/gbackleft.bmp
+images/gbackright.bmp
+images/girder.bmp
+images/grass.bmp
+images/grassleft.bmp
+images/grassright.bmp
+images/grayback.bmp
+images/graybrick.bmp
+images/grayfore.bmp
+images/grayleft.bmp
+images/graymid.bmp
+images/grayright.bmp
+images/graysquare.bmp
+images/greenbrick.bmp
+images/hbar.bmp
+images/orange.bmp
+images/pgem1.bmp
+images/pgem2.bmp
+images/pgem3.bmp
+images/pgem4.bmp
+images/piped.bmp
+images/pipeh.bmp
+images/pipel.bmp
+images/piper.bmp
+images/pipet.bmp
+images/pipev.bmp
+images/platform.bmp
+images/platformright.bmp
+images/platformleft.bmp
+images/red.bmp
+images/redleft.bmp
+images/redright.bmp
+images/gray.bmp
+images/rflower1.bmp
+images/rflower2.bmp
+images/rflower3.bmp
+images/rflower4.bmp
+images/rgem1.bmp
+images/rgem2.bmp
+images/rgem3.bmp
+images/rgem4.bmp
+images/rock.bmp
+images/rockleftbig.bmp
+images/rockleftsmall.bmp
+images/rockrightbig.bmp
+images/rockrightsmall.bmp
+images/sand.bmp
+images/sanddeep.bmp
+images/sandleft.bmp
+images/sandleftdeep.bmp
+images/sandright.bmp
+images/sandrightdeep.bmp
+images/signdown.bmp
+images/signleft.bmp
+images/signright.bmp
+images/signup.bmp
+images/slimy.bmp
+images/spikes.bmp
+images/spring.bmp
+images/springleft.bmp
+images/springright.bmp
+images/vbar.bmp
+images/warnlight.bmp
+images/water.bmp
+images/water1.bmp
+images/water2.bmp
+images/water3.bmp
+images/yflower1.bmp
+images/yflower2.bmp
+images/yflower3.bmp
+images/yflower4.bmp

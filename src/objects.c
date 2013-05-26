@@ -26,14 +26,15 @@ void n_DefaultDeconstructor(void *data) {
 
 /*-------------------------------------------------------------------------------
 
-	e_CreateEntity
+	newEntity
 
 	Creates a new entity with empty settings and places it in the entity list
 
 -------------------------------------------------------------------------------*/
 
-entity_t *e_CreateEntity(void) {
+entity_t *newEntity(void) {
 	entity_t *entity;
+	int c;
 	
 	// allocate memory for entity
 	if( (entity = (entity_t *) malloc(sizeof(entity_t))) == NULL ) {
@@ -49,11 +50,13 @@ entity_t *e_CreateEntity(void) {
 	// now set all of my data elements to ZERO or NULL
 	entity->x=0;
 	entity->y=0;
-	entity->z=0;
-	entity->ang=0;
 	entity->sizex=0;
 	entity->sizey=0;
-	entity->sizez=0;
-	entity->texture=0;
+	entity->sprite=0;
+	for( c=0; c<30; c++ ) {
+		entity->skill[c]=0;
+		entity->fskill[c]=0;
+	}
+	entity->behavior=NULL;
 	return entity;
 }
