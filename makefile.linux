@@ -1,0 +1,32 @@
+#################################################################################
+#	
+#	INFANT STAR
+#	File: linux makefile
+#	Desc: The Infant Star makefile, linux version
+#	
+#	Copyright 2013 (c) Sheridan Rathbun, all rights reserved.
+#	See LICENSE for details.
+#	
+#################################################################################
+
+CC=gcc
+CFLAGS=-Wall -O3 -ffast-math -funroll-loops -malign-double -fstrict-aliasing
+INCLUDE=-I/usr/include/SDL
+LIB=-L/usr/local/lib
+
+all: game clean
+	
+game: objects.o list.o game.o
+	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o -o game $(LIB) -lSDLmain -lSDL -lSDL_mixer -lpthread
+	
+game.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/game.c -o game.o
+	
+list.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/list.c -o list.o
+	
+objects.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/objects.c -o objects.o
+	
+clean:
+	rm *.o

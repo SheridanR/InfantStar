@@ -1,0 +1,2 @@
+sound/jump.wav
+sound/stomp.wav
