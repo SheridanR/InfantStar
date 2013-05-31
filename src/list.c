@@ -46,6 +46,7 @@ int list_FreeAll(list_t *list) {
 -------------------------------------------------------------------------------*/
 
 int list_RemoveNode(node_t *node) {
+	if( node == NULL ) return 1;
 	if( node->list->first == NULL || node->list->last == NULL ) return 1;
 	
 	// if this is the first node...
@@ -100,6 +101,7 @@ node_t *list_AddNode(list_t *list) {
 	}
 	
 	// integrate it into the list
+	node->list = list;
 	if( list->last != NULL ) {
 		// there are prior nodes in the list
 		list->last->next = node;

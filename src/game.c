@@ -10,20 +10,24 @@
 -------------------------------------------------------------------------------*/
 
 #include "infantstar.h"
+#include "game.h"
 
 // definitions
-SDL_TimerID timer;
-SDL_Surface *screen;
+SDL_TimerID timer=NULL;
+SDL_Surface *screen=NULL;
 SDL_Event event;
 int xres = 320;
 int yres = 200;
 int mainloop = 1;
 unsigned long ticks;
 int keystatus[323];
-int mousestatus[5];
-int mousex, mousey;
+char keypressed=0;
+int mousestatus[6];
+int mousex=0, mousey=0;
+int mousexrel=0, mouseyrel=0;
 long camx=0, camy=0;
 long newcamx, newcamy;
+entity_t *selectedEntity = NULL;
 
 // various definitions
 map_t map;
@@ -33,6 +37,7 @@ SDL_Surface **sprites;
 SDL_Surface **tiles;
 Mix_Chunk **sounds;
 list_t entity_l;
+list_t button_l;
 int numsprites, numtiles, numsounds;
 
 // audio definitions
@@ -40,6 +45,14 @@ int audio_rate = 22050;
 Uint16 audio_format = AUDIO_S16;
 int audio_channels = 2;
 int audio_buffers = 512;
+
+// game resources
+SDL_Surface *sky_bmp;
+
+// function prototypes
+Uint32 timerCallback(Uint32 interval, void *param);
+void handleEvents(void);
+void gameLogic(void);
 
 /*-------------------------------------------------------------------------------
 
@@ -72,8 +85,8 @@ void gameLogic(void) {
 -------------------------------------------------------------------------------*/
 
 void handleEvents(void) {
-	mousex = 0;
-	mousey = 0;
+	mousexrel=0; mouseyrel=0;
+	keypressed=0;
 	while( SDL_PollEvent(&event) ) { // poll SDL events
 		// Global events
 		switch( event.type ) {
@@ -82,6 +95,8 @@ void handleEvents(void) {
 				break;
 			case SDL_KEYDOWN: // if a key is pressed...
 				keystatus[event.key.keysym.sym] = 1; // set this key's index to 1
+				if( (event.key.keysym.unicode & 0xFF80) == 0 )
+					keypressed=event.key.keysym.unicode&0x7F; // record the ascii character that was pressed
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
 				keystatus[event.key.keysym.sym] = 0; // set this key's index to 0
@@ -93,8 +108,10 @@ void handleEvents(void) {
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
-				mousex = event.motion.xrel;
-				mousey = event.motion.yrel;
+				mousex = event.motion.x;
+				mousey = event.motion.y;
+				mousexrel = event.motion.xrel;
+				mouseyrel = event.motion.yrel;
 				break;
 			case SDL_USEREVENT: // if the game timer elapses
 				gameLogic();
@@ -142,9 +159,9 @@ Uint32 timerCallback(Uint32 interval, void *param) {
 
 int main(int argc, char **argv ) {
 	int c;
-	int x, y, z;
 	FILE *fp;
 	char name[128];
+	node_t *node;
 	entity_t *entity;
 	
 	// initialize
@@ -157,14 +174,18 @@ int main(int argc, char **argv ) {
 		exit(1);
 	}
 	screen = SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_FULLSCREEN );
+	SDL_EnableUNICODE(1);
 	SDL_WM_SetCaption( "Infant Star", 0 );
 	SDL_ShowCursor(SDL_DISABLE);
+	entity_l.first=NULL; entity_l.last=NULL;
+	button_l.first=NULL; button_l.last=NULL;
 	
 	// load resources
 	font8_bmp = SDL_LoadBMP("images/8font.bmp");
 	SDL_SetColorKey( font8_bmp, SDL_SRCCOLORKEY, SDL_MapRGB( font8_bmp->format, 255, 0, 255 ) );
 	font16_bmp = SDL_LoadBMP("images/16font.bmp");
 	SDL_SetColorKey( font16_bmp, SDL_SRCCOLORKEY, SDL_MapRGB( font16_bmp->format, 255, 0, 255 ) );
+	sky_bmp = SDL_LoadBMP("images/sky.bmp");
 	
 	// load sprites
 	fp = fopen("images/sprites.txt","r");
@@ -210,46 +231,29 @@ int main(int argc, char **argv ) {
 	}
 	fclose(fp);
 	
+	// initialize some vars to zero
+	entity_l.first = NULL; entity_l.last = NULL;
+	button_l.first = NULL; button_l.last = NULL;
+	
 	// instatiate a timer
 	timer = SDL_AddTimer(50, timerCallback, NULL);
 	
-	// create a player object
-	entity=newEntity();
-	entity->behavior=&actPlayer;
-	entity->sprite=4;
-	entity->x=5<<4; entity->y=8<<4;
-	entity->focalx=8; entity->focaly=32;
-	
 	// create a simple test map
-	map.width = 40;
-	map.height = 13;
-	map.tiles = (unsigned char *) malloc(sizeof(unsigned char)*map.width*map.height*MAPLAYERS);
-	for( z=0; z<MAPLAYERS; z++ ) {
-		for( y=0; y<map.height; y++ ) {
-			for( x=0; x<map.width; x++ ) {
-				if( (x==0 || x==map.width-1 || y==0 || y==map.height-1) && z==OBSTACLELAYER )
-					map.tiles[OBSTACLELAYER + y*MAPLAYERS + x*MAPLAYERS*map.height] = 2;
-				else if( z==0 )
-					map.tiles[0 + y*MAPLAYERS + x*MAPLAYERS*map.height] = 22;
-				else
-					map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 0;
-			}
+	map.tiles = NULL;
+	if( argc >= 1 && argv[1] != NULL )
+		loadMap(argv[1]);
+	else
+		loadMap("testmap.imp");
+	for( node=entity_l.first; node!=NULL; node=node->next ) {
+		entity = (entity_t *)node->element;
+		if( entity->sprite == 1 ) {
+			entity->behavior = &actPlayer;
+			camx = entity->x-xres/2;
+			camy = entity->y-yres/2;
+			camx = min(max(0,camx),(map.width-20)<<4);
+			camy = min(max(0,camy),(map.height-13)<<4);
 		}
 	}
-	map.tiles[OBSTACLELAYER + 9*MAPLAYERS + 3*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 9*MAPLAYERS + 4*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 4*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 5*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 6*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 7*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 9*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 10*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 11*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 8*MAPLAYERS + 12*MAPLAYERS*map.height] = 2;
-	
-	map.tiles[OBSTACLELAYER + 7*MAPLAYERS + 11*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 6*MAPLAYERS + 11*MAPLAYERS*map.height] = 2;
-	map.tiles[OBSTACLELAYER + 5*MAPLAYERS + 11*MAPLAYERS*map.height] = 2;
 	
 	// main loop
 	while(mainloop) {
@@ -257,7 +261,7 @@ int main(int argc, char **argv ) {
 		handleEvents();
 		
 		// drawing
-		SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format,0,0,0)); // wipe screen
+		drawSky(sky_bmp);
 		drawBackground(camx,camy);
 		drawEntities(camx,camy);
 		drawForeground(camx,camy);
@@ -270,6 +274,7 @@ int main(int argc, char **argv ) {
 	SDL_FreeSurface(screen);
 	SDL_FreeSurface(font8_bmp);
 	SDL_FreeSurface(font16_bmp);
+	SDL_FreeSurface(sky_bmp);
 	for( c=0; c<numsprites; c++ )
 		SDL_FreeSurface(sprites[c]);
 	free(sprites);

@@ -18,7 +18,7 @@ typedef struct map_t {
 	char name[32];   // name of the map
 	char author[32]; // author of the map
 	unsigned int width, height;  // size of the map
-	unsigned char *tiles;
+	int *tiles;
 } map_t;
 
 #define MAPLAYERS 5 // number of layers contained in a single map
@@ -39,12 +39,12 @@ typedef struct list_t {
 	node_t *last;
 } list_t;
 extern list_t entity_l;
+extern list_t button_l;
 
 // entity structure
 typedef struct entity_t {
 	long x, y;   // world coordinates
-	unsigned int sizex, sizey;    // bounding box size
-	int focalx, focaly;  // entity focal point
+	long focalx, focaly;  // entity focal point
 	unsigned int sprite; // the entity's sprite index
 	
 	// entity attributes
@@ -57,6 +57,19 @@ typedef struct entity_t {
 	// behavior function pointer
 	void (*behavior)(struct entity_t *my);
 } entity_t;
+
+typedef struct button_t {
+	char label[32];   // button label
+	int x, y;         // onscreen position
+	int sizex, sizey; // size of the button
+	int visible;      // invisible buttons are ignored by the handler
+	int focused;      // allows this button to function when a subwindow is open
+	
+	// a pointer to the button's location in a list
+	node_t *node;
+	
+	void (*action)(struct button_t *my);
+} button_t;
 
 #define max(a,b) \
 		({ typeof (a) _a = (a); \
@@ -75,10 +88,13 @@ extern int yres;
 extern int mainloop;
 extern unsigned long ticks;
 extern int keystatus[323];
-extern int mousestatus[5];
+extern char keypressed;
+extern int mousestatus[6];
 extern int mousex, mousey;
+extern int mousexrel, mouseyrel;
 extern long camx, camy;
 extern long newcamx, newcamy;
+extern entity_t *selectedEntity;
 
 // various definitions
 extern map_t map;
@@ -100,18 +116,21 @@ node_t *list_AddNode(list_t *list);
 
 // function prototypes for objects.c:
 void n_DefaultDeconstructor(void *data);
-entity_t *newEntity(void);
-
-// function prototypes for game.c:
-Uint32 timerCallback(Uint32 interval, void *param);
-void handleEvents(void);
-void gameLogic(void);
-
-// function prototypes for behaviors.c:
-void actPlayer(entity_t *my);
+entity_t *newEntity(int sprite);
+button_t *newButton(void);
 
 // function prototypes for draw.c:
+void drawLayer(long camx, long camy, int z);
 void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
+void drawSky(SDL_Surface *srfc);
 void drawEntities(long camx, long camy);
-void printText( SDL_Surface *font_bmp, int x, int y, char *fmt, ... );
+void drawMinimap(long camx, long camy);
+void drawWindow(int x1, int y1, int x2, int y2);
+void drawDepressed(int x1, int y1, int x2, int y2);
+void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... );
+void printText( SDL_Surface *font_bmp, int x, int y, char *str );
+
+// function prototypes for files.c:
+int loadMap(char *filename);
+int saveMap(char *filename);

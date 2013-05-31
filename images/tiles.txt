@@ -46,7 +46,6 @@ images/platformleft.bmp
 images/red.bmp
 images/redleft.bmp
 images/redright.bmp
-images/gray.bmp
 images/rflower1.bmp
 images/rflower2.bmp
 images/rflower3.bmp
@@ -66,6 +65,8 @@ images/sandleft.bmp
 images/sandleftdeep.bmp
 images/sandright.bmp
 images/sandrightdeep.bmp
+images/sandcliffright.bmp
+images/sandcliffleft.bmp
 images/signdown.bmp
 images/signleft.bmp
 images/signright.bmp

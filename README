@@ -1,9 +1,25 @@
 	~ INFANT STAR ~
 
-A game made in three days by Sheridan Kane Rathbun.
+A game not quite made in three days by Sheridan Kane Rathbun.
+
+------ ARGUMENTS ------
+
+To load maps other than the included testmap.imp, you must supply an argument to the game executable at the command line.
+
+Ex: game junkhouse.imp
+
+The above command starts the game and loads the junkhouse.imp level from the "maps" directory.
+
+Dragging and dropping map files onto the executable file in windows will *not* work!
+
+------ CONTROLS ------
+
+The following are the controls used to play the game:
+
+Arrows		-	Move
+Left Ctrl		-	Jump
+Escape		-	End game
 
 ------ CONTACT ------
 
 All suggestions, comments, and questions should be sent to: sheridan.rathbun@gmail.com
-
-No matter who you are, I would very much like to hear from you. :)

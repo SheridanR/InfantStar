@@ -14,10 +14,19 @@ CFLAGS=-Wall -O3 -ffast-math -funroll-loops -malign-double -fstrict-aliasing
 INCLUDE=-I/usr/include/SDL
 LIB=-L/usr/local/lib
 
-all: game clean
+all: buttons.o behaviors.o draw.o objects.o list.o files.o game.o editor.o
+	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o files.o -o game $(LIB) -lSDLmain -lSDL -lSDL_mixer -lpthread
+	$(CC) $(CFLAGS) $(INCLUDE) editor.o list.o objects.o draw.o buttons.o files.o -o editor $(LIB) -lSDLmain -lSDL -lSDL_mixer -lpthread
+	make clean
 	
 game: behaviors.o draw.o objects.o list.o game.o
-	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o -o game $(LIB) -lSDLmain -lSDL -lSDL_mixer -lpthread
+	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o files.o -o game $(LIB) -lSDLmain -lSDL -lSDL_mixer -lpthread
+	
+editor: buttons.o draw.o objects.o list.o editor.o
+	$(CC) $(CFLAGS) $(INCLUDE) editor.o list.o objects.o draw.o buttons.o files.o -o editor $(LIB) -lSDLmain -lSDL -lSDL_mixer -lpthread
+	
+editor.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/editor.c -o editor.o
 	
 game.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c src/game.c -o game.o
@@ -33,6 +42,12 @@ draw.o:
 	
 behaviors.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c src/behaviors.c -o behaviors.o
+	
+buttons.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/buttons.c -o buttons.o
+	
+files.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/files.c -o files.o
 	
 clean:
 	rm *.o

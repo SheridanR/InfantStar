@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "infantstar.h"
+#include "game.h"
 
 #define PLAYER_DIR my->skill[0]
 #define PLAYER_FRAME my->skill[1]
@@ -18,8 +19,12 @@
 #define PLAYER_FALL my->skill[4]
 #define PLAYER_JUMPING my->skill[5]
 #define PLAYER_TURN my->skill[6]
+#define PLAYER_JUMPED my->skill[7]
+#define PLAYER_FELL my->skill[8]
 
 void actPlayer(entity_t *my) {
+	int c;
+	
 	// check for ground
 	PLAYER_ONGROUND=1;
 	if(!map.tiles[OBSTACLELAYER+((my->y)>>4)*MAPLAYERS+((my->x)>>4)*MAPLAYERS*map.height])
@@ -32,25 +37,20 @@ void actPlayer(entity_t *my) {
 		PLAYER_ANIMATE=0;
 		PLAYER_TURN = 0;
 	}
-		
+	
 	// don't jump through the ceiling...
 	if( PLAYER_FALL < 0 ) {
-		if(map.tiles[OBSTACLELAYER+(int)floor((my->y-33)/16.0)*MAPLAYERS+((my->x)>>4)*MAPLAYERS*map.height]) {
-			my->y = (((my->y+15)>>4))<<4;
-			PLAYER_FALL = 0;
-		}
-		else if(map.tiles[OBSTACLELAYER+(int)floor((my->y-33)/16.0)*MAPLAYERS+((my->x-8)>>4)*MAPLAYERS*map.height]) {
-			my->y = (((my->y+15)>>4))<<4;
-			PLAYER_FALL = 0;
-		}
-		else {
-			my->y += PLAYER_FALL;
-			if(map.tiles[OBSTACLELAYER+(int)floor((my->y+PLAYER_FALL-33)/16.0)*MAPLAYERS+((my->x)>>4)*MAPLAYERS*map.height]) {
-				my->y = (((my->y+8)>>4))<<4;
+		PLAYER_JUMPING = 0;
+		if(!map.tiles[OBSTACLELAYER+((my->y-33)>>4)*MAPLAYERS+((my->x)>>4)*MAPLAYERS*map.height])
+			if(!map.tiles[OBSTACLELAYER+((my->y-33)>>4)*MAPLAYERS+((my->x-7)>>4)*MAPLAYERS*map.height])
+				my->y += PLAYER_FALL;
+		for( c=0; c>=PLAYER_FALL; c-- ) {
+			if(map.tiles[OBSTACLELAYER+((my->y-32+c)>>4)*MAPLAYERS+((my->x)>>4)*MAPLAYERS*map.height]) {
+				my->y += c;
 				PLAYER_FALL = 0;
 			}
-			else if(map.tiles[OBSTACLELAYER+(int)floor((my->y+PLAYER_FALL-33)/16.0)*MAPLAYERS+((my->x-8)>>4)*MAPLAYERS*map.height]) {
-				my->y = (((my->y+8)>>4))<<4;
+			else if(map.tiles[OBSTACLELAYER+((my->y-32+c)>>4)*MAPLAYERS+((my->x-7)>>4)*MAPLAYERS*map.height]) {
+				my->y += c;
 				PLAYER_FALL = 0;
 			}
 		}
@@ -81,15 +81,23 @@ void actPlayer(entity_t *my) {
 	else {
 		if( PLAYER_FALL > 0 ) {
 			Mix_PlayChannel(-1, sounds[1], 0);
+			if( PLAYER_FALL == 16 ) {
+				PLAYER_JUMPING = -6;
+				PLAYER_FELL = 1;
+			} else {
+				PLAYER_JUMPING = -3;
+				PLAYER_FELL = 2;
+			}
 			PLAYER_FALL = 0;
-			PLAYER_JUMPING = -4;
+			PLAYER_JUMPED = 0;
 		}
 		my->y += PLAYER_FALL;
 			
 		// jump command
-		if( keystatus[SDLK_LCTRL] && !PLAYER_JUMPING && !PLAYER_FALL ) {
+		if( keystatus[SDLK_LCTRL] && PLAYER_JUMPING>=-2 && PLAYER_JUMPING<=0 && !PLAYER_FALL && !PLAYER_JUMPED ) {
 			Mix_PlayChannel(-1, sounds[0], 0);
 			PLAYER_JUMPING = 1;
+			PLAYER_JUMPED = 1;
 			if( !keystatus[SDLK_RIGHT] && !keystatus[SDLK_LEFT] )
 				PLAYER_DIR = 0;
 		}
@@ -98,19 +106,21 @@ void actPlayer(entity_t *my) {
 	// jumping
 	if( PLAYER_JUMPING ) {
 		if( PLAYER_JUMPING < 0 ) {
-			PLAYER_FRAME = 13;
 			PLAYER_JUMPING++;
+			if( PLAYER_FELL == 2 || PLAYER_JUMPING == -5 || PLAYER_JUMPING == -1 || PLAYER_JUMPING == -2 )
+				PLAYER_FRAME = 12;
+			else
+				PLAYER_FRAME = 13;
 		}
-		if( PLAYER_JUMPING == 1 || PLAYER_JUMPING == 2 ) {
+		if( PLAYER_JUMPING == 1 ) {
 			PLAYER_FRAME = 9;
 			PLAYER_JUMPING++;
 		}
-		else if( PLAYER_JUMPING == 3 ) {
+		else if( PLAYER_JUMPING == 2 ) {
 			PLAYER_FRAME = 10;
 			PLAYER_JUMPING++;
 		}
-		else if( PLAYER_JUMPING == 4 ) {
-			PLAYER_JUMPING = 0;
+		else if( PLAYER_JUMPING == 3 ) {
 			PLAYER_FRAME = 11;
 			PLAYER_FALL = -12;
 			PLAYER_ONGROUND = 0;
@@ -135,13 +145,18 @@ void actPlayer(entity_t *my) {
 			// check for an obstacle and move if clear
 			if(!map.tiles[OBSTACLELAYER+((my->y-1)>>4)*MAPLAYERS+((my->x+8)>>4)*MAPLAYERS*map.height])
 				if(!map.tiles[OBSTACLELAYER+((my->y-17)>>4)*MAPLAYERS+((my->x+8)>>4)*MAPLAYERS*map.height])
-					my->x += 8;
+					if(!map.tiles[OBSTACLELAYER+((my->y-25)>>4)*MAPLAYERS+((my->x+8)>>4)*MAPLAYERS*map.height])
+						my->x += 8;
 		}
 		else {
 			if(!map.tiles[OBSTACLELAYER+((my->y-1)>>4)*MAPLAYERS+((my->x+8)>>4)*MAPLAYERS*map.height]) {
 				if(!map.tiles[OBSTACLELAYER+((my->y-17)>>4)*MAPLAYERS+((my->x+8)>>4)*MAPLAYERS*map.height]) {
-					my->x += 8;
-					PLAYER_DIR = 1; // change direction
+					if(!map.tiles[OBSTACLELAYER+((my->y-25)>>4)*MAPLAYERS+((my->x+8)>>4)*MAPLAYERS*map.height]) {
+						my->x += 8;
+						PLAYER_DIR = 1; // change direction
+					}
+					else
+						PLAYER_DIR = 0;
 				}
 				else
 					PLAYER_DIR = 0;
@@ -169,13 +184,18 @@ void actPlayer(entity_t *my) {
 			// check for an obstacle and move if clear
 			if(!map.tiles[OBSTACLELAYER+((my->y-1)>>4)*MAPLAYERS+((my->x-16)>>4)*MAPLAYERS*map.height])
 				if(!map.tiles[OBSTACLELAYER+((my->y-17)>>4)*MAPLAYERS+((my->x-16)>>4)*MAPLAYERS*map.height])
-					my->x -= 8;
+					if(!map.tiles[OBSTACLELAYER+((my->y-25)>>4)*MAPLAYERS+((my->x-16)>>4)*MAPLAYERS*map.height])
+						my->x -= 8;
 		}
 		else {
 			if(!map.tiles[OBSTACLELAYER+((my->y-1)>>4)*MAPLAYERS+((my->x-16)>>4)*MAPLAYERS*map.height]) {
 				if(!map.tiles[OBSTACLELAYER+((my->y-17)>>4)*MAPLAYERS+((my->x-16)>>4)*MAPLAYERS*map.height]) {
-					my->x -= 8;
-					PLAYER_DIR = 2; // change direction
+					if(!map.tiles[OBSTACLELAYER+((my->y-25)>>4)*MAPLAYERS+((my->x-16)>>4)*MAPLAYERS*map.height]) {
+						my->x -= 8;
+						PLAYER_DIR = 2; // change direction
+					}
+					else
+						PLAYER_DIR = 0;
 				}
 				else
 					PLAYER_DIR = 0;
@@ -186,7 +206,7 @@ void actPlayer(entity_t *my) {
 	}
 	
 	// standing still
-	if( !keystatus[SDLK_LEFT] && !keystatus[SDLK_RIGHT] && !PLAYER_JUMPING && !PLAYER_FALL ) {
+	if( !keystatus[SDLK_LEFT] && !keystatus[SDLK_RIGHT] && !PLAYER_JUMPING && !PLAYER_FALL && !PLAYER_JUMPED ) {
 		if(PLAYER_ONGROUND) {
 			if( PLAYER_ANIMATE > 0 ) {
 				PLAYER_ANIMATE--;
@@ -227,7 +247,7 @@ void actPlayer(entity_t *my) {
 	}
 	
 	// move camera
-	if( my->x-camx >= 192 )
+	if( my->x-camx >= xres-128 )
 		newcamx += 2;
 	else {
 		if( my->x-camx <= 128 )
@@ -241,24 +261,13 @@ void actPlayer(entity_t *my) {
 	}
 	newcamx = min(max(-8,newcamx),8);
 	
-	if( my->y-camy >= 168 )
-		newcamy += 2;
-	else {
-		if( my->y-camy <= 96 )
-			newcamy -= 2;
-		else {
-			if( newcamx > 0 )
-				newcamy-=2;
-			else if( newcamx < 0 )
-				newcamy+=2;
-			if( keystatus[SDLK_DOWN] )
-				newcamy += 4;
-			if( keystatus[SDLK_UP] )
-				newcamy -= 4;
-		}
-	}
-	newcamy = min(max(-8,newcamy),8);
+	if( my->y-camy > yres-64 )
+		newcamy = my->y-camy-yres+64;
+	else if( my->y-camy < 96 )
+		newcamy = my->y-camy-96;
+	else
+		newcamy = 0;
 
 	camx = min(max(0,camx+newcamx),(map.width-20)<<4);
 	camy = min(max(0,camy+newcamy),(map.height-13)<<4);
-}	
+}

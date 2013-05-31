@@ -15,10 +15,21 @@ INCLUDE=-I/usr/include/SDL
 LIB1=-L/usr/lib
 LIB2=-L/usr/local/lib
 
-all: game clean
+all: buttons.o behaviors.o draw.o objects.o list.o files.o game.o editor.o
+	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o files.o -o game.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
+	$(CC) $(CFLAGS) $(INCLUDE) editor.o list.o objects.o draw.o buttons.o files.o -o editor.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
+	make clean
 	
 game: behaviors.o draw.o objects.o list.o game.o
-	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o -o game.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
+	$(CC) $(CFLAGS) $(INCLUDE) game.o list.o objects.o draw.o behaviors.o files.o -o game.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
+	make clean
+	
+editor: buttons.o draw.o objects.o list.o editor.o
+	$(CC) $(CFLAGS) $(INCLUDE) editor.o list.o objects.o draw.o buttons.o files.o -o editor.exe $(LIB1) -lmingw32 $(LIB2) -lSDLmain -lSDL -lSDL_mixer -mwindows -lpthread
+	make clean
+
+editor.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/editor.c -o editor.o
 	
 game.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c src/game.c -o game.o
@@ -34,6 +45,12 @@ draw.o:
 	
 behaviors.o:
 	$(CC) $(CFLAGS) $(INCLUDE) -c src/behaviors.c -o behaviors.o
+	
+buttons.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/buttons.c -o buttons.o
+	
+files.o:
+	$(CC) $(CFLAGS) $(INCLUDE) -c src/files.c -o files.o
 	
 clean:
 	rm *.o
