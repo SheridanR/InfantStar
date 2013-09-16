@@ -2,6 +2,8 @@
 
 A game not quite made in three days by Sheridan Kane Rathbun.
 
+As of September 16th, 2013 this project has been abandoned. However, a very significant portion of the code written for this project is being used in a brand new project. Stay tuned for more info on that.
+
 ------ ARGUMENTS ------
 
 To load maps other than the included testmap.imp, you must supply an argument to the game executable at the command line.
