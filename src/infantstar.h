@@ -9,9 +9,10 @@
 
 -------------------------------------------------------------------------------*/
 
-#include <math.h>
+#include <time.h>
 #include "SDL.h"
 #include "SDL_mixer.h"
+#include "sprig.h"
 
 // game world structure
 typedef struct map_t {
@@ -45,7 +46,7 @@ extern list_t button_l;
 typedef struct entity_t {
 	long x, y;   // world coordinates
 	long focalx, focaly;  // entity focal point
-	unsigned int sprite; // the entity's sprite index
+	int sprite; // the entity's sprite index
 	
 	// entity attributes
 	double fskill[30];
@@ -83,6 +84,7 @@ typedef struct button_t {
 extern SDL_TimerID timer;
 extern SDL_Surface *screen;
 extern SDL_Event event;
+extern int fullscreen;
 extern int xres;
 extern int yres;
 extern int mainloop;
@@ -108,15 +110,20 @@ extern int numtiles;
 extern int numsounds;
 extern int audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
+extern char *animatedtiles;
+
+// function prototypes for init.c:
+int initApp(char *title, int fullscreen);
 
 // function prototypes for list.c:
 int list_FreeAll(list_t *list);
 int list_RemoveNode(node_t *node);
-node_t *list_AddNode(list_t *list);
+node_t *list_AddNodeFirst(list_t *list);
+node_t *list_AddNodeLast(list_t *list);
 
 // function prototypes for objects.c:
 void n_DefaultDeconstructor(void *data);
-entity_t *newEntity(int sprite);
+entity_t *newEntity(int sprite, int pos);
 button_t *newButton(void);
 
 // function prototypes for draw.c:
@@ -125,6 +132,7 @@ void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
 void drawSky(SDL_Surface *srfc);
 void drawEntities(long camx, long camy);
+void drawGrid(long camx, long camy);
 void drawMinimap(long camx, long camy);
 void drawWindow(int x1, int y1, int x2, int y2);
 void drawDepressed(int x1, int y1, int x2, int y2);
@@ -134,3 +142,11 @@ void printText( SDL_Surface *font_bmp, int x, int y, char *str );
 // function prototypes for files.c:
 int loadMap(char *filename);
 int saveMap(char *filename);
+
+// function prototypes for cursors.c:
+SDL_Cursor *newCursor(char *image[]);
+
+// cursor bitmap definitions
+extern char *cursor_pencil[];
+extern char *cursor_brush[];
+extern char *cursor_fill[];

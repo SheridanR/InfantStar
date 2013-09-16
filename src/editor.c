@@ -16,8 +16,9 @@
 SDL_TimerID timer;
 SDL_Surface *screen=NULL;
 SDL_Event event;
-int xres = 640;
-int yres = 400;
+int fullscreen = 0;
+int xres = 800;
+int yres = 600;
 int mainloop = 1;
 unsigned long ticks;
 int keystatus[323];
@@ -28,7 +29,6 @@ int omousex=0, omousey=0;
 int mousexrel=0, mouseyrel=0;
 long camx=0, camy=-16;
 long newcamx, newcamy;
-#define FULLSCREEN 1
 
 // various definitions
 map_t map;
@@ -40,6 +40,7 @@ Mix_Chunk **sounds;
 list_t entity_l;
 list_t button_l;
 int numsprites, numtiles, numsounds;
+char *animatedtiles;
 
 // audio definitions
 int audio_rate = 22050;
@@ -65,6 +66,7 @@ char subtext[1024];
 int toolbox=1;
 int statusbar=1;
 int viewsprites=1;
+int showgrid=0;
 int selectedTile=0;
 int tilepalette=0;
 int spritepalette=0;
@@ -84,8 +86,12 @@ int messagetime=0;
 int cursorflash=0;
 char widthtext[4], heighttext[4], nametext[32], authortext[32];
 int editproperty=0;
+SDL_Cursor *cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
+int *palette;
 
 // buttons
+button_t *butX;
+button_t *but_;
 button_t *butTilePalette;
 button_t *butSprite;
 button_t *butPoint;
@@ -109,6 +115,8 @@ button_t *butToolbox;
 button_t *butStatusBar;
 button_t *butAllLayers;
 button_t *butViewSprites;
+button_t *butGrid;
+button_t *butFullscreen;
 button_t *butMap;
 button_t *butAttributes;
 button_t *butClearMap;
@@ -301,6 +309,18 @@ void handleEvents(void) {
 			case SDL_USEREVENT: // if the game timer elapses
 				mainLogic();
 				break;
+			case SDL_VIDEORESIZE: // if the window is resized
+				if(fullscreen)
+					break;
+				xres = max(event.resize.w,100);
+				yres = max(event.resize.h,75);
+				free(palette);
+				palette = (int *) malloc(sizeof(unsigned int)*xres*yres);
+				if((screen=SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_RESIZABLE )) == NULL) {
+					fprintf(stderr, "failed to set video mode.\n");
+					mainloop=0;
+				}
+				break;
 		}
 	}
 	if(!mousestatus[SDL_BUTTON_LEFT]) {
@@ -350,36 +370,36 @@ void editFill(int x, int y, int layer, int type) {
 		return;
 	
 	fillspot = map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height];
-	map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] = type;
+	map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] = type+numtiles;
 	
 	if( map.tiles[layer+y*MAPLAYERS+(x+1)*MAPLAYERS*map.height] == fillspot && x < map.width-1 )
-		map.tiles[layer+y*MAPLAYERS+(x+1)*MAPLAYERS*map.height] = -type;
+		map.tiles[layer+y*MAPLAYERS+(x+1)*MAPLAYERS*map.height] = type+numtiles;
 	if( map.tiles[layer+y*MAPLAYERS+(x-1)*MAPLAYERS*map.height] == fillspot && x > 0 )
-		map.tiles[layer+y*MAPLAYERS+(x-1)*MAPLAYERS*map.height] = -type;
+		map.tiles[layer+y*MAPLAYERS+(x-1)*MAPLAYERS*map.height] = type+numtiles;
 	if( map.tiles[layer+(y+1)*MAPLAYERS+x*MAPLAYERS*map.height] == fillspot && y < map.height-1 )
-		map.tiles[layer+(y+1)*MAPLAYERS+x*MAPLAYERS*map.height] = -type;
+		map.tiles[layer+(y+1)*MAPLAYERS+x*MAPLAYERS*map.height] = type+numtiles;
 	if( map.tiles[layer+(y-1)*MAPLAYERS+x*MAPLAYERS*map.height] == fillspot && y > 0 )
-		map.tiles[layer+(y-1)*MAPLAYERS+x*MAPLAYERS*map.height] = -type;
+		map.tiles[layer+(y-1)*MAPLAYERS+x*MAPLAYERS*map.height] = type+numtiles;
 
 	while( repeat ) {
 		repeat = 0;
 		for( x=0; x<map.width; x++ )
 			for( y=0; y<map.height; y++ ) {
-				if( map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] == -type ) {
+				if( map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] == type+numtiles ) {
 					if( map.tiles[layer+y*MAPLAYERS+(x+1)*MAPLAYERS*map.height] == fillspot && x < map.width-1 ) {
-						map.tiles[layer+y*MAPLAYERS+(x+1)*MAPLAYERS*map.height] = -type;
+						map.tiles[layer+y*MAPLAYERS+(x+1)*MAPLAYERS*map.height] = type+numtiles;
 						repeat = 1;
 					}
 					if( map.tiles[layer+y*MAPLAYERS+(x-1)*MAPLAYERS*map.height] == fillspot && x > 0 ) {
-						map.tiles[layer+y*MAPLAYERS+(x-1)*MAPLAYERS*map.height] = -type;
+						map.tiles[layer+y*MAPLAYERS+(x-1)*MAPLAYERS*map.height] = type+numtiles;
 						repeat = 1;
 					}
 					if( map.tiles[layer+(y+1)*MAPLAYERS+x*MAPLAYERS*map.height] == fillspot && y < map.height-1 ) {
-						map.tiles[layer+(y+1)*MAPLAYERS+x*MAPLAYERS*map.height] = -type;
+						map.tiles[layer+(y+1)*MAPLAYERS+x*MAPLAYERS*map.height] = type+numtiles;
 						repeat = 1;
 					}
 					if( map.tiles[layer+(y-1)*MAPLAYERS+x*MAPLAYERS*map.height] == fillspot && y > 0 ) {
-						map.tiles[layer+(y-1)*MAPLAYERS+x*MAPLAYERS*map.height] = -type;
+						map.tiles[layer+(y-1)*MAPLAYERS+x*MAPLAYERS*map.height] = type+numtiles;
 						repeat = 1;
 					}
 				}
@@ -388,7 +408,7 @@ void editFill(int x, int y, int layer, int type) {
 	
 	for( x=0; x<map.width; x++ )
 		for( y=0; y<map.height; y++ ) {
-			if( map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] == -type )
+			if( map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] == type+numtiles )
 				map.tiles[layer+y*MAPLAYERS+x*MAPLAYERS*map.height] = type;
 		}
 }
@@ -411,90 +431,24 @@ int main(int argc, char **argv ) {
 	int c;
 	int x, y, z;
 	int x2, y2;
-	FILE *fp;
-	char name[128];
-	int *palette;
 	char action[32];
 	
 	// initialize
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER ) == -1 ) {
-		fprintf(stderr, "could not initialize SDL. aborting...\n");
-		exit(1);
-	}
-	if(Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
-		fprintf(stderr, "unable to open audio! rate: %d format: %d channels: %d buffers: %d\n", audio_rate, audio_format, audio_channels, audio_buffers);
-		exit(1);
-	}
-	#if FULLSCREEN
-		screen = SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_FULLSCREEN );
-	#else
-		screen = SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE );
-	#endif
-	SDL_EnableUNICODE(1);
-	SDL_WM_SetCaption( "Infant Star Editor", 0 );
-	SDL_EnableKeyRepeat(400,50);
-	palette = (int *) malloc(sizeof(unsigned int)*xres*yres);
-	entity_l.first=NULL; entity_l.last=NULL;
-	button_l.first=NULL; button_l.last=NULL;
+	if( (x=initApp("Infant Star Editor",fullscreen)) )
+		exit(x);
 	
-	// load resources
-	font8_bmp = SDL_LoadBMP("images/8font.bmp");
-	SDL_SetColorKey( font8_bmp, SDL_SRCCOLORKEY, SDL_MapRGB( font8_bmp->format, 255, 0, 255 ) );
-	font16_bmp = SDL_LoadBMP("images/16font.bmp");
-	SDL_SetColorKey( font16_bmp, SDL_SRCCOLORKEY, SDL_MapRGB( font16_bmp->format, 255, 0, 255 ) );
-	
-	// load sprites
-	fp = fopen("images/sprites.txt","r");
-	for( numsprites=0; !feof(fp); numsprites++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-	}
-	fclose(fp);
-	sprites = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numsprites);
-	fp = fopen("images/sprites.txt","r");
-	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		sprites[c] = SDL_LoadBMP(name);
-		if( sprites[c] != NULL )
-			SDL_SetColorKey( sprites[c], SDL_SRCCOLORKEY, SDL_MapRGB( sprites[c]->format, 0, 0, 255 ) );
-	}
-	
-	// load tiles
-	fp = fopen("images/tiles.txt","r");
-	for( numtiles=0; !feof(fp); numtiles++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-	}
-	fclose(fp);
-	tiles = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numtiles);
-	fp = fopen("images/tiles.txt","r");
-	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		tiles[c] = SDL_LoadBMP(name);
-		if( tiles[c] != NULL )
-			SDL_SetColorKey( tiles[c], SDL_SRCCOLORKEY, SDL_MapRGB( tiles[c]->format, 0, 0, 0 ) );
-	}
-	
-	// load sound effects
-	fp = fopen("sound/sounds.txt","r");
-	for( numsounds=0; !feof(fp); numsounds++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-	}
-	fclose(fp);
-	sounds = (Mix_Chunk **) malloc(sizeof(Mix_Chunk *)*numsounds);
-	fp = fopen("sound/sounds.txt","r");
-	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		sounds[c] = Mix_LoadWAV(name);
-	}
-	fclose(fp);
-	
-	// initialize some vars to zero
-	entity_l.first = NULL; entity_l.last = NULL;
-	button_l.first = NULL; button_l.last = NULL;
+	// load cursors
+	cursorArrow = SDL_GetCursor();
+	cursorPencil = newCursor(cursor_pencil);
+	cursorBrush = newCursor(cursor_brush);
+	cursorSelect = cursorArrow;
+	cursorFill = newCursor(cursor_fill);
 	
 	// instatiate a timer
 	timer = SDL_AddTimer(50, timerCallback, NULL);
+	srand(time(NULL));
 	
-	// load a map
+	// create an empty map
 	map.width = 32;
 	map.height = 23;
 	map.tiles = (int *) malloc(sizeof(int)*map.width*map.height*MAPLAYERS);
@@ -518,6 +472,7 @@ int main(int argc, char **argv ) {
 	// initialize editor settings
 	drawx=0; drawy=0; drawlayer=0;
 	strcpy(layerstatus,"BACKGROUND");
+	palette = (int *) malloc(sizeof(unsigned int)*xres*yres);
 	
 	// main interface
 	button = butFile = newButton();
@@ -550,13 +505,13 @@ int main(int argc, char **argv ) {
 	button->sizex=40; button->sizey=16;
 	button->action=&buttonHelp;
 	
-	button = newButton();
+	button = butX = newButton();
 	strcpy(button->label,"X");
 	button->x=xres-16; button->y=0;
 	button->sizex=16; button->sizey=16;
 	button->action=&buttonExit;
 	
-	button = newButton();
+	button = but_ = newButton();
 	strcpy(button->label,"_");
 	button->x=xres-32; button->y=0;
 	button->sizex=16; button->sizey=16;
@@ -601,158 +556,191 @@ int main(int argc, char **argv ) {
 	
 	// file menu
 	butNew = button = newButton();
-	strcpy(button->label,"New");
+	strcpy(button->label,"New          Ctrl+N");
 	button->x=16; button->y=16;
-	button->sizex=96; button->sizey=16;
+	button->sizex=160; button->sizey=16;
 	button->action=&buttonNew;
 	button->visible=0;
 	
 	butOpen = button = newButton();
-	strcpy(button->label,"Open ...");
+	strcpy(button->label,"Open ...     Ctrl+O");
 	button->x=16; button->y=32;
-	button->sizex=96; button->sizey=16;
+	button->sizex=160; button->sizey=16;
 	button->action=&buttonOpen;
 	button->visible=0;
 	
 	butSave = button = newButton();
-	strcpy(button->label,"Save");
+	strcpy(button->label,"Save         Ctrl+S");
 	button->x=16; button->y=48;
-	button->sizex=96; button->sizey=16;
+	button->sizex=160; button->sizey=16;
 	button->action=&buttonSave;
 	button->visible=0;
 	
 	butSaveAs = button = newButton();
 	strcpy(button->label,"Save As ...");
 	button->x=16; button->y=64;
-	button->sizex=96; button->sizey=16;
+	button->sizex=160; button->sizey=16;
 	button->action=&buttonSaveAs;
 	button->visible=0;
 	
 	butExit = button = newButton();
-	strcpy(button->label,"Exit");
+	strcpy(button->label,"Exit         Alt+F4");
 	button->x=16; button->y=80;
-	button->sizex=96; button->sizey=16;
+	button->sizex=160; button->sizey=16;
 	button->action=&buttonExit;
 	button->visible=0;
 	
 	// edit menu
 	butCut = button = newButton();
-	strcpy(button->label,"Cut");
+	strcpy(button->label,"Cut         Ctrl+X");
 	button->x=56; button->y=16;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonCut;
 	button->visible=0;
 	
 	butCopy = button = newButton();
-	strcpy(button->label,"Copy");
+	strcpy(button->label,"Copy        Ctrl+C");
 	button->x=56; button->y=32;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonCopy;
 	button->visible=0;
 	
 	butPaste = button = newButton();
-	strcpy(button->label,"Paste");
+	strcpy(button->label,"Paste       Ctrl+V");
 	button->x=56; button->y=48;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonPaste;
 	button->visible=0;
 	
 	butDelete = button = newButton();
-	strcpy(button->label,"Delete");
+	strcpy(button->label,"Delete      Del");
 	button->x=56; button->y=64;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonDelete;
 	button->visible=0;
 	
 	butSelectAll = button = newButton();
-	strcpy(button->label,"Select All");
+	strcpy(button->label,"Select All  Ctrl+A");
 	button->x=56; button->y=80;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonSelectAll;
 	button->visible=0;
 	
 	// view menu
 	butStatusBar = button = newButton();
-	strcpy(button->label,"Statusbar");
+	strcpy(button->label,"Statusbar   Ctrl+I");
 	button->x=96; button->y=16;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonStatusBar;
 	button->visible=0;
 	
 	butToolbox = button = newButton();
-	strcpy(button->label,"Toolbox");
+	strcpy(button->label,"Toolbox     Ctrl+T");
 	button->x=96; button->y=32;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonToolbox;
 	button->visible=0;
 	
 	butAllLayers = button = newButton();
-	strcpy(button->label,"All Layers");
+	strcpy(button->label,"All Layers  Ctrl+L");
 	button->x=96; button->y=48;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonAllLayers;
 	button->visible=0;
 	
 	butViewSprites = button = newButton();
-	strcpy(button->label,"Sprites");
+	strcpy(button->label,"Sprites     Ctrl+E");
 	button->x=96; button->y=64;
-	button->sizex=88; button->sizey=16;
+	button->sizex=152; button->sizey=16;
 	button->action=&buttonViewSprites;
+	button->visible=0;
+	
+	butGrid = button = newButton();
+	strcpy(button->label,"Grid        Ctrl+G");
+	button->x=96; button->y=80;
+	button->sizex=152; button->sizey=16;
+	button->action=&buttonGrid;
+	button->visible=0;
+	
+	butFullscreen = button = newButton();
+	strcpy(button->label,"Fullscreen  Ctrl+F");
+	button->x=96; button->y=96;
+	button->sizex=152; button->sizey=16;
+	button->action=&buttonFullscreen;
 	button->visible=0;
 	
 	// map menu
 	butAttributes = button = newButton();
-	strcpy(button->label,"Attributes ...");
+	strcpy(button->label,"Attributes ...  Ctrl+M");
 	button->x=136; button->y=16;
-	button->sizex=120; button->sizey=16;
+	button->sizex=232; button->sizey=16;
 	button->action=&buttonAttributes;
 	button->visible=0;
 	
 	butClearMap = button = newButton();
-	strcpy(button->label,"Clear Map");
+	strcpy(button->label,"Clear Map       Ctrl+Shift+N");
 	button->x=136; button->y=32;
-	button->sizex=120; button->sizey=16;
+	button->sizex=232; button->sizey=16;
 	button->action=&buttonClearMap;
 	button->visible=0;
 	
 	// help menu
 	butAbout = button = newButton();
-	strcpy(button->label,"About");
+	strcpy(button->label,"About  F1");
 	button->x=168; button->y=16;
-	button->sizex=48; button->sizey=16;
+	button->sizex=80; button->sizey=16;
 	button->action=&buttonAbout;
 	button->visible=0;
 	
 	// main loop
+	fprintf(stderr, "running main loop.\n");
 	while(mainloop) {
 		// game logic
 		handleEvents();
+		
+		// move buttons
+		if( !fullscreen ) {
+			butX->visible = 0;
+			but_->visible = 0;
+		} else {
+			butX->visible = 1;
+			but_->visible = 1;
+			butX->x = xres-16;
+			but_->x = xres-32;
+		}
+		butTilePalette->x = xres-112;
+		butSprite->x = xres-112;
+		butPoint->x = xres-96;
+		butBrush->x = xres-96;
+		butSelect->x = xres-96;
+		butFill->x = xres-96;
+		
 		if( !spritepalette && !tilepalette ) {
 			allowediting=1;
 			if( (omousex>=xres-128 && toolbox) || omousey<16 || (omousey>=yres-16 && statusbar) || subwindow || menuVisible )
 				allowediting=0;
 			if( menuVisible == 1 ) {
-				if((omousex>112||omousey>96||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
+				if((omousex>16+butNew->sizex||omousey>96||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible=0;
 					menuDisappear=1;
 				}
 			} else if( menuVisible == 2 ) {
-				if((omousex>144||omousex<40||omousey>96||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
+				if((omousex>56+butCut->sizex||omousex<40||omousey>96||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible=0;
 					menuDisappear=1;
 				}
 			} else if( menuVisible == 3 ) {
-				if((omousex>184||omousex<80||omousey>80||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
+				if((omousex>96+butToolbox->sizex||omousex<80||omousey>112||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible=0;
 					menuDisappear=1;
 				}
 			} else if( menuVisible == 4 ) {
-				if((omousex>256||omousex<120||omousey>48||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
+				if((omousex>136+butClearMap->sizex||omousex<120||omousey>48||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible=0;
 					menuDisappear=1;
 				}
 			} else if( menuVisible == 5 ) {
-				if((omousex>216||omousex<152||omousey>32||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
+				if((omousex>168+butAbout->sizex||omousex<152||omousey>32||(omousey<16&&omousex>192))&&mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible=0;
 					menuDisappear=1;
 				}
@@ -765,45 +753,89 @@ int main(int argc, char **argv ) {
 				drawx = (mousex+camx)>>4;
 				drawy = (mousey+camy)>>4;
 				
+				// set the cursor
+				switch( selectedTool ) {
+					case 0:	SDL_SetCursor(cursorPencil);
+							break;
+					case 1:	SDL_SetCursor(cursorBrush);
+							break;
+					case 2:	SDL_SetCursor(cursorSelect);
+							break;
+					case 3:	SDL_SetCursor(cursorFill);
+							break;
+					default:	SDL_SetCursor(cursorArrow);
+							break;
+				}
+				
 				// move entities
 				if( entity_l.first != NULL && viewsprites && allowediting ) {
 					for( node=entity_l.first; node!=NULL; node=nextnode ) {
 						nextnode = node->next;
 						entity = (entity_t *)node->element;
 						if( entity == selectedEntity ) {
-							if( keystatus[SDLK_DELETE] ) {
-								selectedEntity=NULL;
-								list_RemoveNode(entity->node);
-								break;
-							}
 							if( mousestatus[SDL_BUTTON_LEFT] ) {
 								mousestatus[SDL_BUTTON_LEFT] = 0;
 								selectedEntity = NULL;
+								break;
+							}
+							else if( mousestatus[SDL_BUTTON_RIGHT] ) {
+								selectedEntity=newEntity(entity->sprite,0);
+								selectedEntity->x=entity->x;
+								selectedEntity->y=entity->y;
+								mousestatus[SDL_BUTTON_RIGHT]=0;
 								break;
 							}
 							entity->x = (long)(drawx<<4)+(entity->focalx);
 							entity->y = (long)(drawy<<4)+(entity->focaly);
 						}
 						else {
-							if( mousestatus[SDL_BUTTON_LEFT] ) {
-								if( entity->sprite > 0 && entity->sprite < numsprites ) {
-									if( sprites[entity->sprite] != NULL ) {
-										if( omousex+camx >= entity->x-entity->focalx && omousey+camy >= entity->y-entity->focaly && omousex+camx < entity->x+sprites[entity->sprite]->w-entity->focalx && omousey+camy < entity->y+sprites[entity->sprite]->h-entity->focaly ) {
+							if( entity->sprite > 0 && entity->sprite < numsprites ) {
+								if( sprites[entity->sprite] != NULL ) {
+									if( omousex+camx >= entity->x-entity->focalx && omousey+camy >= entity->y-entity->focaly && omousex+camx < entity->x+sprites[entity->sprite]->w-entity->focalx && omousey+camy < entity->y+sprites[entity->sprite]->h-entity->focaly ) {
+										if( mousestatus[SDL_BUTTON_LEFT] ) {
+											// select sprite
 											selectedEntity=entity;
 											mousestatus[SDL_BUTTON_LEFT]=0;
 										}
-									}
-									else {
-										if( (omousex+camx)>>4 == (entity->x-entity->focalx)>>4 && (omousey+camy)>>4 == (entity->y-entity->focaly)>>4 ) {
-											selectedEntity=entity;
-											mousestatus[SDL_BUTTON_LEFT]=0;
+										else if( mousestatus[SDL_BUTTON_RIGHT] ) {
+											// duplicate sprite
+											selectedEntity=newEntity(entity->sprite,0);
+											selectedEntity->x=entity->x;
+											selectedEntity->y=entity->y;
+											mousestatus[SDL_BUTTON_RIGHT]=0;
 										}
 									}
 								}
 								else {
 									if( (omousex+camx)>>4 == (entity->x-entity->focalx)>>4 && (omousey+camy)>>4 == (entity->y-entity->focaly)>>4 ) {
+										if( mousestatus[SDL_BUTTON_LEFT] ) {
+											// select sprite
+											selectedEntity=entity;
+											mousestatus[SDL_BUTTON_LEFT]=0;
+										}
+										else if( mousestatus[SDL_BUTTON_RIGHT] ) {
+											// duplicate sprite
+											selectedEntity=newEntity(entity->sprite,0);
+											selectedEntity->x=entity->x;
+											selectedEntity->y=entity->y;
+											mousestatus[SDL_BUTTON_RIGHT]=0;
+										}
+									}
+								}
+							}
+							else {
+								if( (omousex+camx)>>4 == (entity->x-entity->focalx)>>4 && (omousey+camy)>>4 == (entity->y-entity->focaly)>>4 ) {
+									if( mousestatus[SDL_BUTTON_LEFT] ) {
+										// select sprite
 										selectedEntity=entity;
 										mousestatus[SDL_BUTTON_LEFT]=0;
+									}
+									else if( mousestatus[SDL_BUTTON_RIGHT] ) {
+										// duplicate sprite
+										selectedEntity=newEntity(entity->sprite,0);
+										selectedEntity->x=entity->x;
+										selectedEntity->y=entity->y;
+										mousestatus[SDL_BUTTON_RIGHT]=0;
 									}
 								}
 							}
@@ -831,11 +863,13 @@ int main(int argc, char **argv ) {
 						}
 					}
 				}
-				if( mousestatus[SDL_BUTTON_RIGHT] ) {
+				if( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL ) {
 					if( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 						selectedTile = map.tiles[drawlayer+drawy*MAPLAYERS+drawx*MAPLAYERS*map.height];
 				}
 			}
+			else
+				SDL_SetCursor(cursorArrow);
 			
 			// main drawing
 			SDL_FillRect(screen, NULL, SDL_MapRGB(screen->format,0,0,0)); // wipe screen
@@ -848,6 +882,8 @@ int main(int argc, char **argv ) {
 				drawEntities(camx,camy);
 			if( alllayers )
 				drawForeground(camx,camy);
+			if( showgrid )
+				drawGrid(camx,camy);
 			
 			// primary interface
 			drawWindow(0,0,xres,16);
@@ -919,11 +955,13 @@ int main(int argc, char **argv ) {
 				butSelectAll->visible = 0;
 			}
 			if( menuVisible == 3 ) {
-				drawWindow(80,16,96,80);
+				drawWindow(80,16,96,112);
 				butToolbox->visible = 1;
 				butStatusBar->visible = 1;
 				butAllLayers->visible = 1;
 				butViewSprites->visible = 1;
+				butGrid->visible = 1;
+				butFullscreen->visible = 1;
 				if( statusbar )
 					printText(font8_bmp,84,20,"]");
 				if( toolbox )
@@ -932,12 +970,18 @@ int main(int argc, char **argv ) {
 					printText(font8_bmp,84,52,"]");
 				if( viewsprites )
 					printText(font8_bmp,84,68,"]");
+				if( showgrid )
+					printText(font8_bmp,84,84,"]");
+				if( fullscreen )
+					printText(font8_bmp,84,100,"]");
 			}
 			else {
 				butToolbox->visible = 0;
 				butStatusBar->visible = 0;
 				butAllLayers->visible = 0;
 				butViewSprites->visible = 0;
+				butGrid->visible = 0;
+				butFullscreen->visible = 0;
 			}
 			if( menuVisible == 4 ) {
 				drawWindow(120,16,136,48);
@@ -1145,6 +1189,130 @@ int main(int argc, char **argv ) {
 							printText(font8_bmp,subx1+108+x*8,suby2-20,"_");
 					}
 				}
+			} else {
+				// handle hotkeys
+				if( keystatus[SDLK_LCTRL]||keystatus[SDLK_RCTRL] ) {
+					if( keystatus[SDLK_n] && !keystatus[SDLK_LSHIFT] && !keystatus[SDLK_RSHIFT] ) {
+						keystatus[SDLK_n]=0;
+						buttonNew(NULL);
+					}
+					if( keystatus[SDLK_s] ) {
+						keystatus[SDLK_s]=0;
+						buttonSave(NULL);
+					}
+					if( keystatus[SDLK_o] ) {
+						keystatus[SDLK_o]=0;
+						buttonOpen(NULL);
+					}
+					if( keystatus[SDLK_x] ) {
+						keystatus[SDLK_x]=0;
+						buttonCut(NULL);
+					}
+					if( keystatus[SDLK_c] ) {
+						keystatus[SDLK_c]=0;
+						buttonCopy(NULL);
+					}
+					if( keystatus[SDLK_v] ) {
+						keystatus[SDLK_v]=0;
+						buttonPaste(NULL);
+					}
+					if( keystatus[SDLK_a] ) {
+						keystatus[SDLK_a]=0;
+						buttonSelectAll(NULL);
+					}
+					if( keystatus[SDLK_g] ) {
+						keystatus[SDLK_g]=0;
+						buttonGrid(NULL);
+					}
+					if( keystatus[SDLK_t] ) {
+						keystatus[SDLK_t]=0;
+						buttonToolbox(NULL);
+					}
+					if( keystatus[SDLK_e] ) {
+						keystatus[SDLK_e]=0;
+						buttonViewSprites(NULL);
+					}
+					if( keystatus[SDLK_l] ) {
+						keystatus[SDLK_l]=0;
+						buttonAllLayers(NULL);
+					}
+					if( keystatus[SDLK_i] ) {
+						keystatus[SDLK_i]=0;
+						buttonStatusBar(NULL);
+					}
+					if( keystatus[SDLK_f] ) {
+						keystatus[SDLK_f]=0;
+						buttonFullscreen(NULL);
+					}
+					if( keystatus[SDLK_m] ) {
+						keystatus[SDLK_m]=0;
+						buttonAttributes(NULL);
+					}
+					if( keystatus[SDLK_LSHIFT]||keystatus[SDLK_RSHIFT] )
+						if( keystatus[SDLK_n] ) {
+							keystatus[SDLK_n]=0;
+							buttonClearMap(NULL);
+						}
+				} else {
+					if( keystatus[SDLK_s] ) {
+						keystatus[SDLK_s]=0;
+						spritepalette=1;
+					}
+					if( keystatus[SDLK_t] ) {
+						keystatus[SDLK_t]=0;
+						tilepalette=1;
+					}
+				}
+				if( keystatus[SDLK_LALT]||keystatus[SDLK_RALT] ) {
+					if( keystatus[SDLK_f] ) {
+						keystatus[SDLK_f]=0;
+						menuVisible=1;
+					}
+					if( keystatus[SDLK_e] ) {
+						keystatus[SDLK_e]=0;
+						menuVisible=2;
+					}
+					if( keystatus[SDLK_v] ) {
+						keystatus[SDLK_v]=0;
+						menuVisible=3;
+					}
+					if( keystatus[SDLK_m] ) {
+						keystatus[SDLK_m]=0;
+						menuVisible=4;
+					}
+					if( keystatus[SDLK_h] ) {
+						keystatus[SDLK_h]=0;
+						menuVisible=5;
+					}
+					if( keystatus[SDLK_F4] ) {
+						keystatus[SDLK_F4]=0;
+						buttonExit(NULL);
+					}
+				}
+				if( keystatus[SDLK_DELETE] ) {
+					keystatus[SDLK_DELETE]=0;
+					buttonDelete(NULL);
+				}
+				if( keystatus[SDLK_F1] ) {
+					keystatus[SDLK_F1]=0;
+					buttonAbout(NULL);
+				}
+				if( keystatus[SDLK_1] ) {
+					keystatus[SDLK_1]=0;
+					selectedTool=0;
+				}
+				if( keystatus[SDLK_2] ) {
+					keystatus[SDLK_2]=0;
+					selectedTool=1;
+				}
+				if( keystatus[SDLK_3] ) {
+					keystatus[SDLK_3]=0;
+					selectedTool=2;
+				}
+				if( keystatus[SDLK_4] ) {
+					keystatus[SDLK_4]=0;
+					selectedTool=3;
+				}
 			}
 			// process and draw buttons
 			handleButtons();
@@ -1161,7 +1329,8 @@ int main(int argc, char **argv ) {
 					SDL_BlitSurface(sprites[c], NULL, screen, &pos);
 					for( x2=x; x2<x+sprites[c]->w; x2++ )
 						for( y2=y; y2<y+sprites[c]->h; y2++ ) {
-							palette[y2+x2*yres]=c;
+							if( x2<xres && y2<yres )
+								palette[y2+x2*yres]=c;
 						}
 					x += sprites[c]->w;
 					z = max(z,sprites[c]->h);
@@ -1205,7 +1374,7 @@ int main(int argc, char **argv ) {
 			if(!mousestatus[SDL_BUTTON_LEFT]&&mclick) {
 				// create a new object
 				if(palette[mousey+mousex*yres] >= 0) {
-					entity=newEntity(palette[mousey+mousex*yres]);
+					entity=newEntity(palette[mousey+mousex*yres],0);
 					selectedEntity=entity;
 				}
 				
@@ -1218,6 +1387,10 @@ int main(int argc, char **argv ) {
 			}
 			switch( palette[mousey+mousex*yres] ) {
 				case 1:	strcpy(action,"PLAYER"); break;
+				case 53:	strcpy(action,"PURPLEGEM"); break;
+				case 37:	strcpy(action,"REDGEM"); break;
+				case 74:
+				case 75:	strcpy(action,"TROLL"); break;
 				default:	strcpy(action,"STATIC"); break;
 			}
 			if( palette[mousey+mousex*yres] >= 0 )
@@ -1237,7 +1410,8 @@ int main(int argc, char **argv ) {
 					SDL_BlitSurface(tiles[c], NULL, screen, &pos);
 					for( x2=x; x2<x+tiles[c]->w; x2++ )
 						for( y2=y; y2<y+tiles[c]->h; y2++ ) {
-							palette[y2+x2*yres]=c;
+							if( x2<xres && y2<yres )
+								palette[y2+x2*yres]=c;
 						}
 					x += tiles[c]->w;
 					if( c<numtiles-1 ) {
@@ -1297,11 +1471,19 @@ int main(int argc, char **argv ) {
 	}
 	
 	// deinit
+	fprintf(stderr, "freeing lists...\n");
 	list_FreeAll(&entity_l);
+	list_FreeAll(&button_l);
+	fprintf(stderr, "removing engine timer...\n");
 	SDL_RemoveTimer(timer);
-	SDL_FreeSurface(screen);
+	fprintf(stderr, "freeing engine resources...\n");
+	SDL_SetCursor(cursorArrow);
+	SDL_FreeCursor(cursorPencil);
+	SDL_FreeCursor(cursorBrush);
+	SDL_FreeCursor(cursorFill);
 	SDL_FreeSurface(font8_bmp);
 	SDL_FreeSurface(font16_bmp);
+	fprintf(stderr, "freeing game data...\n");
 	for( c=0; c<numsprites; c++ )
 		SDL_FreeSurface(sprites[c]);
 	free(sprites);
@@ -1313,7 +1495,9 @@ int main(int argc, char **argv ) {
 	free(sounds);
 	free(map.tiles);
 	free(palette);
+	fprintf(stderr, "closing SDL and SDL_Mixer...\n");
 	Mix_CloseAudio();
 	SDL_Quit();
+	fprintf(stderr, "success\n");
 	return 0;
 }

@@ -18,6 +18,8 @@
 #define MINHEIGHT 4
 
 // button definitions
+extern button_t *butX;
+extern button_t *but_;
 extern button_t *butTilePalette;
 extern button_t *butSprite;
 extern button_t *butPoint;
@@ -41,6 +43,8 @@ extern button_t *butToolbox;
 extern button_t *butStatusBar;
 extern button_t *butAllLayers;
 extern button_t *butViewSprites;
+extern button_t *butGrid;
+extern button_t *butFullscreen;
 extern button_t *butMap;
 extern button_t *butAttributes;
 extern button_t *butClearMap;
@@ -54,6 +58,7 @@ extern int toolbox;
 extern int statusbar;
 extern int viewsprites;
 extern int alllayers;
+extern int showgrid;
 extern int selectedTile;
 extern int tilepalette;
 extern int spritepalette;
@@ -70,6 +75,7 @@ extern char message[48];
 extern int cursorflash;
 extern char widthtext[4], heighttext[4], nametext[32], authortext[32];
 extern int editproperty;
+extern int *palette;
 
 // function prototypes for buttons.c:
 void buttonExit(button_t *my);
@@ -101,6 +107,8 @@ void buttonToolbox(button_t *my);
 void buttonStatusBar(button_t *my);
 void buttonAllLayers(button_t *my);
 void buttonViewSprites(button_t *my);
+void buttonGrid(button_t *my);
+void buttonFullscreen(button_t *my);
 void buttonMap(button_t *my);
 void buttonAttributes(button_t *my);
 void buttonAttributesConfirm(button_t *my);

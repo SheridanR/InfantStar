@@ -93,8 +93,8 @@ void buttonFile(button_t *my) {
 void buttonNew(button_t *my) {
 	button_t *button;
 	
-	itoa(map.width,widthtext,10);
-	itoa(map.height,heighttext,10);
+	snprintf(widthtext, 4, "%d", map.width);
+	snprintf(heighttext, 4, "%d", map.height);
 	strcpy(nametext,map.name);
 	strcpy(authortext,map.author);
 	cursorflash=0;
@@ -208,7 +208,7 @@ void buttonOpen(button_t *my) {
 	button->focused=1;
 	
 	// file list
-	if( (dir=opendir(".\\maps\\")) != NULL ) {
+	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
 			if( strstr(ent->d_name,".imp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") )
 				d_names_length++;
@@ -216,13 +216,13 @@ void buttonOpen(button_t *my) {
 		closedir(dir);
 	} else {
 		// could not open directory
-		fprintf(stderr,"failed to open map directory for viewing!");
+		fprintf(stderr,"failed to open map directory for viewing!\n");
 	}
 	d_names = (char **) malloc(sizeof(char *)*d_names_length);
 	for( c=0; c<d_names_length; c++ )
 		d_names[c] = (char *) malloc(sizeof(char)*FILENAME_MAX);
 	c=0;
-	if( (dir=opendir(".\\maps\\")) != NULL ) {
+	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
 			if( strstr(ent->d_name,".imp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") ) {
 				strcpy(d_names[c],ent->d_name);
@@ -232,7 +232,7 @@ void buttonOpen(button_t *my) {
 		closedir(dir);
 	} else {
 		// could not open directory
-		fprintf(stderr,"failed to open map directory for viewing!");
+		fprintf(stderr,"failed to open map directory for viewing!\n");
 	}
 }
 
@@ -260,7 +260,7 @@ void buttonOpenConfirm(button_t *my) {
 void buttonSave(button_t *my) {
 	int c, c2;
 	menuVisible=0;
-	if(filename == NULL)
+	if(!strcmp(filename,""))
 		buttonSaveAs(my);
 	else {
 		strcpy(message,"");
@@ -327,7 +327,7 @@ void buttonSaveAs(button_t *my) {
 	button->focused=1;
 	
 	// file list
-	if( (dir=opendir(".\\maps\\")) != NULL ) {
+	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
 			if( strstr(ent->d_name,".imp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") )
 				d_names_length++;
@@ -335,13 +335,13 @@ void buttonSaveAs(button_t *my) {
 		closedir(dir);
 	} else {
 		// could not open directory
-		fprintf(stderr,"failed to open map directory for viewing!");
+		fprintf(stderr,"failed to open map directory for viewing!\n");
 	}
 	d_names = (char **) malloc(sizeof(char *)*d_names_length);
 	for( c=0; c<d_names_length; c++ )
 		d_names[c] = (char *) malloc(sizeof(char)*FILENAME_MAX);
 	c=0;
-	if( (dir=opendir(".\\maps\\")) != NULL ) {
+	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
 			if( strstr(ent->d_name,".imp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") ) {
 				strcpy(d_names[c],ent->d_name);
@@ -351,7 +351,7 @@ void buttonSaveAs(button_t *my) {
 		closedir(dir);
 	} else {
 		// could not open directory
-		fprintf(stderr,"failed to open map directory for viewing!");
+		fprintf(stderr,"failed to open map directory for viewing!\n");
 	}
 }
 
@@ -400,7 +400,6 @@ void buttonView(button_t *my) {
 }
 
 void buttonToolbox(button_t *my) {
-	menuVisible = 0;
 	toolbox = (toolbox==0);
 	butTilePalette->visible = (butTilePalette->visible==0);
 	butSprite->visible = (butSprite->visible==0);
@@ -411,18 +410,38 @@ void buttonToolbox(button_t *my) {
 }
 
 void buttonStatusBar(button_t *my) {
-	menuVisible = 0;
 	statusbar = (statusbar==0);
 }
 
 void buttonAllLayers(button_t *my) {
-	menuVisible = 0;
 	alllayers = (alllayers==0);
 }
 
 void buttonViewSprites(button_t *my) {
-	menuVisible = 0;
 	viewsprites = (viewsprites==0);
+}
+
+void buttonGrid(button_t *my) {
+	showgrid = (showgrid==0);
+}
+
+void buttonFullscreen(button_t *my) {
+	fullscreen = (fullscreen==0);
+	if(!fullscreen) {
+		free(palette);
+		palette = (int *) malloc(sizeof(unsigned int)*xres*yres);
+		if((screen=SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_RESIZABLE )) == NULL) {
+			fprintf(stderr, "failed to set video mode.\n");
+		}
+	}
+	else {
+		xres=640; yres=400;
+		free(palette);
+		palette = (int *) malloc(sizeof(unsigned int)*xres*yres);
+		if((screen=SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_FULLSCREEN )) == NULL) {
+			fprintf(stderr, "failed to set video mode.\n");
+		}
+	}
 }
 
 // Map menu
@@ -437,8 +456,8 @@ void buttonMap(button_t *my) {
 void buttonAttributes(button_t *my) {
 	button_t *button;
 	
-	itoa(map.width,widthtext,10);
-	itoa(map.height,heighttext,10);
+	snprintf(widthtext, 4, "%d", map.width);
+	snprintf(heighttext, 4, "%d", map.height);
 	strcpy(nametext,map.name);
 	strcpy(authortext,map.author);
 	cursorflash=0;

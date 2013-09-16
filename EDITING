@@ -13,7 +13,7 @@ Unlike many other tile engines which only allow designers to have one tile at a 
 
 The images for sprites and tiles are loaded from their respective text files in the "images" directory and placed into lists when the editor and game start. Since sprites and tiles in the level are referenced by their placement in this textfile (or _index_number_), randomly inserting the names of new images somewhere in the middle of these text files is generally a very bad idea. In the event that certain images listed in either of these textfiles do not exist or fail to be loaded, the game and editor will compensate by using the default "null" image, which should signify designers to an error in their data files.
 
-In the engine, the tile with the 0 index is always drawn completely transparent, but in certain cases in the editor it may appear as a small image with the word "sky" written on it. This is to signify that if a "hole" of transparent pixels or tiles ever remains consistent through all five layers in the same location, that a sky image will appear in the hole as a consistent backdrop.
+In the engine, the tile with the 0 index is always drawn completely transparent, but in certain cases in the editor it may appear as a small image with the word "sky" written on it. This is to signify that if a "hole" of transparent pixels or tiles ever remains consistent through all five layers in the same location, that a sky image will appear in the hole as a persistent backdrop.
 
 The color [0,0,0], or solid black, represents a transparent area in tile bitmaps. In sprites, the color [0,0,255], or solid blue, represents transparency. The engine is *only* compatible with 24-bit .bmp files; other file formats are not acceptable.
 
@@ -27,7 +27,7 @@ The File menu lets you create new maps, open existing maps for editing, save you
 
 The Edit menu allows you to manipulate objects that you have currently selected with the Select tool. Note: as of v0.8, most of the options in this menu are non-functional.
 
-The View menu allows you to toggle on and off various settings that change the appearance and functionality of the editor. A check mark is shown next to each option that is currently enabled. The first two options allow you to toggle on and off the toolbox and status bar in the editor, while the "All layers" button allows you to view all the layers in your level at the same time instead of just the current one. In addition, toggling the "Sprites" option lets you hide all the sprites in your level, which is useful when you have many sprites that are interfering with your tile editing.
+The View menu allows you to toggle on and off various settings that change the appearance and functionality of the editor. A check mark is shown next to each option that is currently enabled. The first two options allow you to toggle on and off the toolbox and status bar in the editor, while the "All layers" button allows you to view all the layers in your level at the same time instead of just the current one. In addition, toggling the "Sprites" option lets you hide all the sprites in your level, the "Grid" option lets you toggle the visibility of a grid for the tilemap, and the "Fullscreen" option lets you move the editor from windowed mode to fullscreen mode and vice-versa.
 
 The Map menu allows you to access the Attributes dialog, which lets you change various details of the map you are currently editing. It also gives you access to the Clear Map option, which will clear your entire map of tiles and entities after going through a confirmation window.
 
@@ -45,7 +45,7 @@ The "Sprite ..." button allows you to select and place certain sprites into your
 
 Below the Palette and Sprite buttons, various tool buttons can be found. These buttons are "Point", which lets you paint tiles one at a time; "Brush", which lets you paint multiple tiles at once in a small radius; "Select", which lets you select and manipulate groups of tiles; and "Fill", which lets you fill whole regions of tiles with the currently selected tile.
 
-Below the tool buttons, both the currently selected tile and tile that the mouse is currently hovering over are shown. These two items are simply for reference, though the "Above" tile can be copied to the selected tile at any time by clicking the right mouse button.
+Below the tool buttons, both the currently selected tile and tile that the mouse is currently hovering over are shown. These two items are simply for reference, though the "Above" tile can be copied to the selected tile at any time by clicking the right mouse button (unless a sprite is under the mouse, in which case the sprite will be selected and duplicated).
 
 ------ THE STATUS BAR ------
 
@@ -58,15 +58,21 @@ Outside of the space designated to the menus, toolbox, and status bar, the main 
 The following are the controls available to the user when operating in the main viewing area:
 
 Left-click	-	Use the currently selected tool at the cursor's location and in the current layer / select sprites / drop sprites
-Right-click	-	Grab the tile under the mouse in the current layer
+Right-click	-	Grab the tile under the mouse in the current layer, or duplicate the sprite under the cursor
 Mouse wheel	-	Change the currently selected layer.
 Arrows		-	Move camera
-Ctrl+X		-	Cut current selection
-Ctrl+C		-	Copy current selection
-Ctrl+V		-	Paste current selection
-Delete		-	Delete current selection
+S			-	Sprite Palette
+T			-	Tile Palette
+
+In addition, most of the menu functions can be accessed through hotkeys that are listed next to them in the menu.
 
 Note that even if all layers are visible, map editing will only take place in the CURRENTLY SELECTED LAYER, which is visible in the status bar at the bottom of the screen. MAKE SURE you're in the right layer before you start painting tiles and modifying your level! If you can't see where it is you're working because tiles in the foreground are obscuring your view, TURN OFF the "All Layers" option in the View menu at the top of the screen.
+
+------ KNOWN ISSUES ------
+
+There is no undo/redo function.
+
+The select tool doesn't work.
 
 ------ CONTACT ------
 

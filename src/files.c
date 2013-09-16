@@ -28,30 +28,35 @@ int loadMap(char *filename2) {
 	unsigned int sprite;
 	char *filename;
 	
-	if( filename2 != NULL ) {
+	if( filename2 != NULL && strcmp(filename2,"") ) {
 		c=0;
 		while(1) {
 			if(filename2[c]==0)
 				break;
 			c++;
 		}
-		filename = (char *) malloc(sizeof(char)*(c+10));
-		strcpy(filename,".\\maps\\");
+		filename = (char *) malloc(sizeof(char)*(c+14));
+		strcpy(filename,"maps/");
 		strcat(filename,filename2);
 		
 		if( strcmp(filename,"..") && strcmp(filename,".") ) {
+			// add extension if missing
+			if( strstr(filename,".imp") == NULL )
+				strcat(filename,".imp");
+			
 			// load the file!
+			fprintf(stderr,"opening map file '%s'...\n",filename);
 			if((fp = fopen(filename, "rb")) == NULL) {
-				fprintf(stderr,"failed to open file '%s' for map loading!",filename);
+				fprintf(stderr,"failed to open file '%s' for map loading!\n",filename);
 				return 1;
 			}
 		} else {
-			fprintf(stderr,"failed to open file '%s' for map loading!",filename);
+			fprintf(stderr,"failed to open file '%s' for map loading!\n",filename);
 			return 1;
 		}
 		fread(valid_data, sizeof(char), strlen("INFANTSTAR"), fp);
 		if( strncmp(valid_data,"INFANTSTAR",strlen("INFANTSTAR")) ) {
-			fprintf(stderr,"file '%s' is an invalid map file.",filename);
+			fprintf(stderr,"file '%s' is an invalid map file.\n",filename);
 			fclose(fp);
 			return 1;
 		}
@@ -67,7 +72,7 @@ int loadMap(char *filename2) {
 		fread(&numentities,sizeof(unsigned int), 1, fp); // number of entities on the map
 		for(c=0; c<numentities; c++) {
 			fread(&sprite,sizeof(unsigned int), 1, fp);
-			entity = newEntity(sprite);
+			entity = newEntity(sprite,0);
 			fread(&entity->x,sizeof(long), 1, fp);
 			fread(&entity->y,sizeof(long), 1, fp);
 		}
@@ -98,7 +103,7 @@ int saveMap(char *filename2) {
 	char *filename;
 	unsigned int c;
 	
-	if( filename2 != NULL ) {
+	if( filename2 != NULL && strcmp(filename2,"") ) {
 		c=0;
 		while(1) {
 			if(filename2[c]==0)
@@ -106,13 +111,14 @@ int saveMap(char *filename2) {
 			c++;
 		}
 		filename = (char *) malloc(sizeof(char)*(c+10));
-		strcpy(filename,".\\maps\\");
+		strcpy(filename,"maps/");
 		strcat(filename,filename2);
 		
 		if( strstr(filename,".imp") == NULL )
 			strcat(filename,".imp");
+		fprintf(stderr,"saving map file '%s'...\n",filename);
 		if((fp = fopen(filename, "wb")) == NULL) {
-			fprintf(stderr,"failed to open file '%s' for map saving!",filename);
+			fprintf(stderr,"failed to open file '%s' for map saving!\n",filename);
 			return 1;
 		}
 

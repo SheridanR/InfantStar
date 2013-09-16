@@ -1,3 +1,14 @@
 sound/jump.wav
 sound/stomp.wav
 sound/negative.wav
+sound/gem.wav
+sound/pickup.wav
+sound/powerup.wav
+sound/heal.wav
+sound/bigimpact.wav
+sound/smallimpact.wav
+sound/burnimpact.wav
+sound/crash.wav
+sound/shoot.wav
+sound/damagemonster.wav
+sound/destroy.wav

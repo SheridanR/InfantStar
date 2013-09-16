@@ -117,19 +117,40 @@ void drawEntities(long camx, long camy) {
 				SDL_BlitSurface(sprites[0], NULL, screen, &pos);
 			}
 		}
-		else {
-			if( entity == selectedEntity ) {
-				box.w = sprites[0]->w; box.h = sprites[0]->h;
-				box.x = pos.x; box.y = pos.y;
-				SDL_FillRect(screen,&box,SDL_MapRGB(screen->format,255,255,255));
-				box.w = sprites[0]->w-2; box.h = sprites[0]->h-2;
-				box.x = pos.x+1; box.y = pos.y+1;
-				SDL_FillRect(screen,&box,SDL_MapRGB(screen->format,0,0,255));
-			}
-			SDL_BlitSurface(sprites[0], NULL, screen, &pos);
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+	drawGrid
+	
+	Draws a white line grid for the tile map
+
+-------------------------------------------------------------------------------*/
+
+void drawGrid(long camx, long camy) {
+	long x, y;
+	Uint32 color;
+	color = SDL_MapRGB(screen->format,127,127,127);
+	
+	SPG_LineH(screen,-camx,(map.height<<4)-camy-1,(map.width<<4)-camx-1,color);
+	SPG_LineV(screen,(map.width<<4)-camx-1,-camy,(map.height<<4)-camy-1,color);
+	for( y=0; y<map.height; y++ ) {
+		for( x=0; x<map.width; x++ ) {
+			SPG_LineH(screen,(x<<4)-camx,(y<<4)-camy,((x+1)<<4)-camx-1,color);
+			SPG_LineV(screen,(x<<4)-camx,(y<<4)-camy,((y+1)<<4)-camy-1,color);
 		}
 	}
 }
+
+/*-------------------------------------------------------------------------------
+
+	drawMinimap
+	
+	Draws a minimap in the upper right corner of the screen to represent
+	the screen's position relative to the rest of the level
+
+-------------------------------------------------------------------------------*/
 
 void drawMinimap(long camx, long camy) {
 	SDL_Rect src, osrc;
@@ -258,7 +279,7 @@ void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... ) {
 		}
 		
 		src.x = (str[c]*src.w)%font_bmp->w;
-		src.y = floor((str[c]*src.w)/font_bmp->w)*src.h;
+		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		odest.x=dest.x; odest.y=dest.y;
 		SDL_BlitSurface( font_bmp, &src, screen, &dest );
 		dest.x=odest.x; dest.y=odest.y;
@@ -306,7 +327,7 @@ void printText( SDL_Surface *font_bmp, int x, int y, char *str ) {
 		}
 		
 		src.x = (str[c]*src.w)%font_bmp->w;
-		src.y = floor((str[c]*src.w)/font_bmp->w)*src.h;
+		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		odest.x=dest.x; odest.y=dest.y;
 		SDL_BlitSurface( font_bmp, &src, screen, &dest );
 		dest.x=odest.x; dest.y=odest.y;

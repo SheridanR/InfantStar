@@ -16,6 +16,7 @@
 SDL_TimerID timer=NULL;
 SDL_Surface *screen=NULL;
 SDL_Event event;
+int fullscreen = 1;
 int xres = 320;
 int yres = 200;
 int mainloop = 1;
@@ -39,6 +40,7 @@ Mix_Chunk **sounds;
 list_t entity_l;
 list_t button_l;
 int numsprites, numtiles, numsounds;
+char *animatedtiles;
 
 // audio definitions
 int audio_rate = 22050;
@@ -116,6 +118,16 @@ void handleEvents(void) {
 			case SDL_USEREVENT: // if the game timer elapses
 				gameLogic();
 				break;
+			case SDL_VIDEORESIZE: // if the window is resized
+				if(fullscreen)
+					break;
+				xres = max(event.resize.w,100);
+				yres = max(event.resize.h,75);
+				if((screen=SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_RESIZABLE )) == NULL) {
+					fprintf(stderr, "failed to set video mode.\n");
+					mainloop=0;
+					break;
+				}
 		}
 	}
 	
@@ -158,123 +170,98 @@ Uint32 timerCallback(Uint32 interval, void *param) {
 -------------------------------------------------------------------------------*/
 
 int main(int argc, char **argv ) {
-	int c;
-	FILE *fp;
-	char name[128];
+	int x, y, z, c;
 	node_t *node;
 	entity_t *entity;
+	Mix_Music *music;
 	
 	// initialize
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_TIMER ) == -1 ) {
-		fprintf(stderr, "could not initialize SDL. aborting...\n");
-		exit(1);
-	}
-	if(Mix_OpenAudio(audio_rate, audio_format, audio_channels, audio_buffers)) {
-		fprintf(stderr, "unable to open audio! rate: %d format: %d channels: %d buffers: %d\n", audio_rate, audio_format, audio_channels, audio_buffers);
-		exit(1);
-	}
-	screen = SDL_SetVideoMode( xres, yres, 32, SDL_HWSURFACE | SDL_FULLSCREEN );
-	SDL_EnableUNICODE(1);
-	SDL_WM_SetCaption( "Infant Star", 0 );
-	SDL_ShowCursor(SDL_DISABLE);
-	entity_l.first=NULL; entity_l.last=NULL;
-	button_l.first=NULL; button_l.last=NULL;
-	
-	// load resources
-	font8_bmp = SDL_LoadBMP("images/8font.bmp");
-	SDL_SetColorKey( font8_bmp, SDL_SRCCOLORKEY, SDL_MapRGB( font8_bmp->format, 255, 0, 255 ) );
-	font16_bmp = SDL_LoadBMP("images/16font.bmp");
-	SDL_SetColorKey( font16_bmp, SDL_SRCCOLORKEY, SDL_MapRGB( font16_bmp->format, 255, 0, 255 ) );
-	sky_bmp = SDL_LoadBMP("images/sky.bmp");
-	
-	// load sprites
-	fp = fopen("images/sprites.txt","r");
-	for( numsprites=0; !feof(fp); numsprites++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-	}
-	fclose(fp);
-	sprites = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numsprites);
-	fp = fopen("images/sprites.txt","r");
-	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		sprites[c] = SDL_LoadBMP(name);
-		if( sprites[c] != NULL )
-			SDL_SetColorKey( sprites[c], SDL_SRCCOLORKEY, SDL_MapRGB( sprites[c]->format, 0, 0, 255 ) );
-	}
-	
-	// load tiles
-	fp = fopen("images/tiles.txt","r");
-	for( numtiles=0; !feof(fp); numtiles++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-	}
-	fclose(fp);
-	tiles = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numtiles);
-	fp = fopen("images/tiles.txt","r");
-	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		tiles[c] = SDL_LoadBMP(name);
-		if( tiles[c] != NULL )
-			SDL_SetColorKey( tiles[c], SDL_SRCCOLORKEY, SDL_MapRGB( tiles[c]->format, 0, 0, 0 ) );
-	}
-	
-	// load sound effects
-	fp = fopen("sound/sounds.txt","r");
-	for( numsounds=0; !feof(fp); numsounds++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-	}
-	fclose(fp);
-	sounds = (Mix_Chunk **) malloc(sizeof(Mix_Chunk *)*numsounds);
-	fp = fopen("sound/sounds.txt","r");
-	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		sounds[c] = Mix_LoadWAV(name);
-	}
-	fclose(fp);
-	
-	// initialize some vars to zero
-	entity_l.first = NULL; entity_l.last = NULL;
-	button_l.first = NULL; button_l.last = NULL;
+	if( (x=initApp("Infant Star",fullscreen)) )
+		exit(x);
 	
 	// instatiate a timer
 	timer = SDL_AddTimer(50, timerCallback, NULL);
+	srand(time(NULL));
 	
-	// create a simple test map
+	// load sky image
+	sky_bmp = SDL_LoadBMP("images/sky.bmp");
+	
+	// load music
+	music = Mix_LoadMUS("music/music.ogg");
+	Mix_VolumeMusic(64);
+	
+	// load a map
 	map.tiles = NULL;
 	if( argc >= 1 && argv[1] != NULL )
-		loadMap(argv[1]);
+		x=loadMap(argv[1]);
 	else
-		loadMap("testmap.imp");
-	for( node=entity_l.first; node!=NULL; node=node->next ) {
-		entity = (entity_t *)node->element;
-		if( entity->sprite == 1 ) {
-			entity->behavior = &actPlayer;
-			camx = entity->x-xres/2;
-			camy = entity->y-yres/2;
-			camx = min(max(0,camx),(map.width-20)<<4);
-			camy = min(max(0,camy),(map.height-13)<<4);
+		x=loadMap("testmap.imp");
+	
+	if(!x) {
+		// create tile animator entities where necessary
+		for(x=0;x<map.width;x++)
+			for(y=0;y<map.height;y++)
+				for(z=0;z<MAPLAYERS;z++) {
+					if( animatedtiles[map.tiles[z+y*MAPLAYERS+x*MAPLAYERS*map.height]] ) {
+						entity = newEntity(-1,0);
+						entity->x = x;
+						entity->y = y;
+						entity->skill[0] = z; // remember tile layer
+						entity->skill[1] = animatedtiles[map.tiles[z+y*MAPLAYERS+x*MAPLAYERS*map.height]];
+						map.tiles[z+y*MAPLAYERS+x*MAPLAYERS*map.height]-=entity->skill[1]-1;
+					}
+				}
+		
+		// assign entity behaviors
+		for( node=entity_l.first; node!=NULL; node=node->next ) {
+			entity = (entity_t *)node->element;
+			switch( entity->sprite ) {
+				case -1:	entity->behavior = &actAnimator; break;
+				case 1:	entity->behavior = &actPlayer;
+						camx = entity->x-xres/2;
+						camy = entity->y-yres/2;
+						camx = min(max(0,camx),(map.width-20)<<4);
+						camy = min(max(0,camy),(map.height-13)<<4);
+						break;
+				case 53:	entity->behavior = &actPGem; break;
+				case 57:	entity->behavior = &actRGem; break;
+				case 75:	entity->skill[0]=1; // turn left
+				case 74:	entity->behavior = &actTroll;
+						entity->HEALTH=4;
+						break;
+				default:	entity->behavior = NULL;
+			}
+		}
+		
+		// main loop
+		fprintf(stderr, "running main loop.\n");
+		while(mainloop) {
+			// handle music
+			if(!Mix_PlayingMusic())
+				Mix_PlayMusic(music, 1);
+				
+			// game logic
+			handleEvents();
+			
+			// drawing
+			drawSky(sky_bmp);
+			drawBackground(camx,camy);
+			drawEntities(camx,camy);
+			drawForeground(camx,camy);
+			SDL_Flip( screen );
 		}
 	}
 	
-	// main loop
-	while(mainloop) {
-		// game logic
-		handleEvents();
-		
-		// drawing
-		drawSky(sky_bmp);
-		drawBackground(camx,camy);
-		drawEntities(camx,camy);
-		drawForeground(camx,camy);
-		SDL_Flip( screen );
-	}
-	
 	// deinit
+	fprintf(stderr, "freeing lists...\n");
 	list_FreeAll(&entity_l);
+	fprintf(stderr, "removing engine timer...\n");
 	SDL_RemoveTimer(timer);
-	SDL_FreeSurface(screen);
+	fprintf(stderr, "freeing engine resources...\n");
 	SDL_FreeSurface(font8_bmp);
 	SDL_FreeSurface(font16_bmp);
 	SDL_FreeSurface(sky_bmp);
+	fprintf(stderr, "freeing game data...\n");
 	for( c=0; c<numsprites; c++ )
 		SDL_FreeSurface(sprites[c]);
 	free(sprites);
@@ -285,7 +272,11 @@ int main(int argc, char **argv ) {
 		Mix_FreeChunk(sounds[c]);
 	free(sounds);
 	free(map.tiles);
+	Mix_HaltMusic();
+	Mix_FreeMusic(music);
+	fprintf(stderr, "closing SDL and SDL_Mixer...\n");
 	Mix_CloseAudio();
 	SDL_Quit();
+	fprintf(stderr, "success\n");
 	return 0;
 }

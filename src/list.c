@@ -85,13 +85,39 @@ int list_RemoveNode(node_t *node) {
 
 /*-------------------------------------------------------------------------------
 
-	list_AddNode
+	list_AddNodeFirst / list_AddNodeLast
 
-	Inserts a new node at the end of a given list
+	Inserts a new node into a given list
 
 -------------------------------------------------------------------------------*/
 
-node_t *list_AddNode(list_t *list) {
+node_t *list_AddNodeFirst(list_t *list) {
+	node_t *node;
+	
+	// allocate memory for node
+	if( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
+		fprintf( stderr, "failed to allocate memory for new node!\n" );
+		exit(1);
+	}
+	
+	// integrate it into the list
+	node->list = list;
+	if( list->first != NULL ) {
+		// there are prior nodes in the list
+		list->first->prev = node;
+		node->next = list->first;
+	} else {
+		// inserting into an empty list
+		node->next = NULL;
+		list->last = node;
+	}
+	list->first = node;
+	node->prev = NULL;
+	
+	return node;
+}
+
+node_t *list_AddNodeLast(list_t *list) {
 	node_t *node;
 	
 	// allocate memory for node
