@@ -161,34 +161,31 @@ void drawMinimap(long camx, long camy) {
 	src.h = 112;
 	SDL_FillRect(screen,&src,SDL_MapRGB(screen->format,0,0,0));
 	
-	if( camx )
-		src.x = xres-120 + 112*((double)camx/((long)map.width<<4));
-	else
-		src.x = xres-120;
-	if( camy )
-		src.y = 24 + 112*((double)camy/((long)map.height<<4));
-	else
-		src.y = 24;
+	// initial box dimensions
+	src.x = (xres-120) + (((double)camx/16)*112.0)/map.width;
+	src.y = 24 + (((double)camy/16)*112.0)/map.height;
+	src.w = (112.0/map.width)*((double)xres/16);
+	src.h = (112.0/map.height)*((double)yres/16);
 	
-	if( (long)map.width<<4 >= (long)xres )
-		src.w = 112/(((long)map.width<<4)/(long)xres);
-	else
-		src.w = 112;
-	if( src.w+src.x > xres-8 )
-		src.w = xres-8-src.x;
-	if( src.x<xres-120 )
+	// clip at left edge
+	if( src.x < xres-120 ) {
 		src.w -= (xres-120)-src.x;
+		src.x = xres-120;
+	}
 	
-	if( (long)map.height<<4 >= (long)yres )
-		src.h = 112/(((long)map.height<<4)/(long)yres);
-	else
-		src.h = 112;
-	if( src.h+src.y > 136 )
-		src.h = 136-src.y;
-	if( src.y<24 )
+	// clip at right edge
+	if( src.x+src.w > xres-8 )
+		src.w = xres-8-src.x;
+		
+	// clip at top edge
+	if( src.y < 24 ) {
 		src.h -= 24-src.y;
-	src.x = max(src.x,xres-120);
-	src.y = max(src.y,24);
+		src.y = 24;
+	}
+	
+	// clip at bottom edge
+	if( src.y+src.h > 136 )
+		src.h = 136-src.y;
 	
 	osrc.x = src.x+1; osrc.y = src.y+1;
 	osrc.w = src.w-2; osrc.h = src.h-2;
@@ -272,25 +269,15 @@ void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... ) {
 	
 	// print the characters in the string
 	for( c=0; c<numbytes; c++ ) {
-		// edge of the screen prompts an automatic newline
-		if( xres-dest.x < src.w ) {
-			dest.x = x;
-			dest.y += src.h;
-		}
-		
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
-		odest.x=dest.x; odest.y=dest.y;
-		SDL_BlitSurface( font_bmp, &src, screen, &dest );
-		dest.x=odest.x; dest.y=odest.y;
-		switch( str[c] ) {
-			case 10: // line feed
-				dest.x = x;
-				dest.y += src.h;
-				break;
-			default:
-				dest.x += src.w; // move over one character
-				break;
+		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
+			odest.x=dest.x; odest.y=dest.y;
+			SDL_BlitSurface( font_bmp, &src, screen, &dest );
+			dest.x=odest.x+src.w; dest.y=odest.y;
+		} else if( str[c]==10 ) {
+			dest.x=x;
+			dest.y+=src.h;
 		}
 	}
 	va_end( argptr );
@@ -328,17 +315,13 @@ void printText( SDL_Surface *font_bmp, int x, int y, char *str ) {
 		
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
-		odest.x=dest.x; odest.y=dest.y;
-		SDL_BlitSurface( font_bmp, &src, screen, &dest );
-		dest.x=odest.x; dest.y=odest.y;
-		switch( str[c] ) {
-			case 10: // line feed
-				dest.x = x;
-				dest.y += src.h;
-				break;
-			default:
-				dest.x += src.w; // move over one character
-				break;
+		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
+			odest.x=dest.x; odest.y=dest.y;
+			SDL_BlitSurface( font_bmp, &src, screen, &dest );
+			dest.x=odest.x+src.w; dest.y=odest.y;
+		} else if( str[c]==10 ) {
+			dest.x=x;
+			dest.y+=src.h;
 		}
 	}
 }

@@ -107,6 +107,7 @@ void actAnimator(entity_t *my) {
 #define PLAYER_LASTDIR my->skill[9]
 #define PLAYER_SHOOT my->skill[10]
 #define PLAYER_RECOIL my->skill[11]
+#define PLAYER_JUMPPOWER my->skill[12]
 
 int maxbullets=2;
 int bullets=0;
@@ -157,7 +158,7 @@ void actPlayer(entity_t *my) {
 			
 		// increase vertical velocity
 		if( PLAYER_FALL < 16 )
-			PLAYER_FALL += 2;
+			PLAYER_FALL += 2-keystatus[SDLK_LCTRL];
 		
 		// animate
 		if( PLAYER_FALL >= 0 )
@@ -180,14 +181,18 @@ void actPlayer(entity_t *my) {
 		my->y += PLAYER_FALL;
 			
 		// jump command
-		if( keystatus[SDLK_LCTRL] && PLAYER_JUMPING>=-2 && PLAYER_JUMPING<=0 && !PLAYER_FALL && !PLAYER_JUMPED ) {
-			Mix_PlayChannel(-1, sounds[0], 0);
-			keystatus[SDLK_LCTRL]=0;
-			PLAYER_JUMPING = 1;
-			PLAYER_JUMPED = 1;
-			PLAYER_SHOOT = 0;
-			if( !keystatus[SDLK_RIGHT] && !keystatus[SDLK_LEFT] )
-				PLAYER_DIR = 0;
+		if( keystatus[SDLK_LCTRL] ) {
+			if( PLAYER_JUMPING>=-2 && PLAYER_JUMPING<=0 && !PLAYER_FALL && !PLAYER_JUMPED ) {
+				Mix_PlayChannel(-1, sounds[0], 0);
+				PLAYER_JUMPING = 1;
+				PLAYER_JUMPED = 1;
+				PLAYER_JUMPPOWER = -4;
+				PLAYER_SHOOT = 0;
+				if( !keystatus[SDLK_RIGHT] && !keystatus[SDLK_LEFT] )
+					PLAYER_DIR = 0;
+			} else {
+				PLAYER_JUMPPOWER -= 4;
+			}
 		}
 	}
 	
@@ -210,7 +215,8 @@ void actPlayer(entity_t *my) {
 		}
 		else if( PLAYER_JUMPING == 3 ) {
 			PLAYER_FRAME = 11;
-			PLAYER_FALL = -12;
+			PLAYER_FALL = PLAYER_JUMPPOWER;
+			PLAYER_JUMPPOWER = 0;
 			PLAYER_ONGROUND = 0;
 		}
 	}
